@@ -3,140 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>島之後 - 即時共享點餐</title>
+    <title>島之後 In the Island After - 228 團購點餐</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <style>
+        .member-btn.active { background-color: #06b6d4; border-color: #22d3ee; box-shadow: 0 0 15px rgba(34, 211, 238, 0.5); }
+        input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+        .category-title { border-left: 6px solid #22d3ee; padding-left: 1rem; margin-bottom: 1.5rem; font-size: 1.8rem; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-32 font-sans">
 
-    <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div class="lg:col-span-2">
-            <header class="mb-6">
-                <h1 class="text-3xl font-bold text-cyan-400">島之後 預約點餐</h1>
-                <p class="text-slate-400 text-sm mt-2">輸入名字後點餐，結果會自動同步給所有人</p>
-            </header>
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <header class="text-center mb-12">
+            <h1 class="text-6xl font-black text-cyan-400 tracking-tighter mb-4">島之後</h1>
+            <p class="text-2xl text-slate-400">228 台南空山鹿耳 · 預約點餐系統</p>
+        </header>
 
-            <div class="bg-slate-800 p-4 rounded-xl mb-6 border border-slate-700">
-                <input type="text" id="userName" placeholder="請輸入你的名字 (必填)" class="w-full bg-slate-700 border-none rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500">
-            </div>
-
-            <div id="menu-container" class="space-y-6">
+        <section class="mb-16 bg-slate-800/50 p-6 rounded-3xl border border-slate-700">
+            <h2 class="text-3xl font-bold text-cyan-300 mb-6 text-center">1. 誰在點餐？</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="memberList">
                 </div>
-        </div>
+        </section>
 
-        <div class="lg:col-span-1">
-            <div class="sticky top-4 bg-slate-800 rounded-2xl p-6 border border-cyan-500/30 shadow-2xl">
-                <h2 class="text-xl font-bold text-cyan-400 mb-4 flex items-center">
-                    <span class="relative flex h-3 w-3 mr-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
-                    </span>
-                    目前大家點了什麼
-                </h2>
-                <div id="order-summary" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 text-sm">
-                    <p class="text-slate-500">尚無人點餐...</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div class="lg:col-span-2 space-y-16" id="menu-sections">
+                <h2 class="text-3xl font-bold text-cyan-300">2. 選擇餐點與數量</h2>
                 </div>
-                <div class="mt-6 pt-4 border-t border-slate-700">
-                    <p class="text-right text-slate-400">當前總金額</p>
-                    <p class="text-right text-3xl font-bold text-green-400">NT$ <span id="grandTotal">0</span></p>
+
+            <div class="lg:col-span-1">
+                <div class="sticky top-6 bg-slate-800 rounded-3xl p-8 border-2 border-cyan-500 shadow-2xl">
+                    <h2 class="text-3xl font-bold text-cyan-400 mb-6 flex items-center">
+                        <span class="animate-pulse mr-2">●</span>即時匯整
+                    </h2>
+                    <div id="order-summary-list" class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 text-xl">
+                        <p class="text-slate-500 italic">正在從 Google Sheet 讀取...</p>
+                    </div>
+                    <div class="mt-8 pt-6 border-t-2 border-slate-700 text-right">
+                        <p class="text-slate-400 text-lg">總計金額</p>
+                        <p class="text-5xl font-black text-green-400">NT$ <span id="grandTotalDisplay">0</span></p>
+                    </div>
+                    <button onclick="fetchLatestOrders()" class="w-full mt-6 py-2 text-slate-500 hover:text-cyan-400 text-sm">手動刷新列表 ↻</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. Firebase 配置 (請替換成你的配置) ---
-        const firebaseConfig = {
-            apiKey: "你的API_KEY",
-            authDomain: "你的PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://你的PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "你的PROJECT_ID",
-            storageBucket: "你的PROJECT_ID.appspot.com",
-            messagingSenderId: "你的SENDER_ID",
-            appId: "你的APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        // --- 設定區 ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec";
+        const members = ["Po Huai 傅懷", "Aone", "Louis 彭顥正", "Morris Cheng", "YULIN 毓麟", "蔡沛庭 Neo", "阿忠 Jasper", "+5"];
+        let currentMember = "";
 
-        // --- 2. 菜單資料 ---
         const menuData = {
-            "Pasta": [
+            "Pasta 義大利麵": [
                 { name: "蒜梨醬豬五花義大利麵", price: 260 },
                 { name: "海瓜子蛤蠣薄荷清炒義大利麵", price: 280 },
                 { name: "野菇培根白醬義大利麵", price: 250 },
                 { name: "經典肉醬義大利麵", price: 240 }
             ],
-            "Main Course": [
+            "Main Course 主餐": [
                 { name: "看著玉米田的牛小排", price: 580 },
-                { name: "慢煮豬梅花排佐黑糖奶油汁", price: 380 },
+                { name: "慢煮豬梅花排佐黑糖香茅奶油汁", price: 380 },
                 { name: "爐烤八兩雞腿排", price: 300 },
                 { name: "油封鴨腿佐全生態小農作物", price: 380 }
             ],
-            "Risotto": [
+            "Risotto 燉飯": [
                 { name: "干貝小卷章魚汁海鮮燉飯", price: 350 },
                 { name: "剝皮辣椒雞燉飯", price: 280 },
+                { name: "獵人燉雞燉飯", price: 300 },
                 { name: "義式松露野菇玄米茶燉飯", price: 320 }
+            ],
+            "Special 特別推薦": [
+                { name: "沖繩塔可飯", price: 260 },
+                { name: "100%豬肉漢堡排飯", price: 220 },
+                { name: "牛肉漢堡排飯", price: 260 }
+            ],
+            "Appetizer 前菜": [
+                { name: "烤綜合時蔬", price: 180 },
+                { name: "美式酥炸薯條", price: 120 },
+                { name: "美式肉醬薯條", price: 200 },
+                { name: "幸福炸雞", price: 180 },
+                { name: "印尼風情辣雞翅", price: 220 },
+                { name: "挪威鮭魚乾魷魚菠菜醬", price: 380 }
+            ],
+            "Salad & Soup 沙拉與湯": [
+                { name: "今日例湯", price: 50 },
+                { name: "西班牙生火腿水果沙拉(小)", price: 200 },
+                { name: "西班牙生火腿水果沙拉(大)", price: 360 },
+                { name: "泰棒了椒麻雞沙拉(小)", price: 180 },
+                { name: "泰棒了椒麻雞沙拉(大)", price: 380 }
             ]
         };
 
-        // --- 3. 初始化菜單 UI ---
-        const container = document.getElementById('menu-container');
-        for (const [cat, items] of Object.entries(menuData)) {
-            let html = `<section><h3 class="text-cyan-300 mb-3 font-bold">${cat}</h3><div class="grid gap-3">`;
-            items.forEach(item => {
-                html += `
-                    <div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center border border-slate-700">
-                        <span>${item.name} <small class="text-slate-400 ml-2">NT$${item.price}</small></span>
-                        <button onclick="submitOrder('${item.name}', ${item.price})" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-1 rounded-full text-sm transition">點這份</button>
-                    </div>`;
+        // --- 初始化 UI ---
+        function init() {
+            // 生成成員按鈕
+            const memberContainer = document.getElementById('memberList');
+            members.forEach(m => {
+                const btn = document.createElement('button');
+                btn.className = "member-btn border-2 border-slate-700 p-5 rounded-2xl text-2xl font-bold hover:border-cyan-500 transition-all duration-200";
+                btn.innerText = m;
+                btn.onclick = () => {
+                    document.querySelectorAll('.member-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMember = m;
+                };
+                memberContainer.appendChild(btn);
             });
-            html += `</div></section>`;
-            container.innerHTML += html;
-        }
 
-        // --- 4. 點餐邏輯 (寫入 Firebase) ---
-        function submitOrder(itemName, price) {
-            const user = document.getElementById('userName').value;
-            if (!user) return alert("請先輸入名字喔！");
-
-            // 存入資料庫：orders/名字/餐點
-            db.ref('orders/' + user).push({
-                item: itemName,
-                price: price,
-                time: Date.now()
-            });
-        }
-
-        // --- 5. 監聽資料庫變動 (即時更新 UI) ---
-        db.ref('orders').on('value', (snapshot) => {
-            const allOrders = snapshot.val();
-            const summaryDiv = document.getElementById('order-summary');
-            const totalSpan = document.getElementById('grandTotal');
-            
-            if (!allOrders) return;
-
-            summaryDiv.innerHTML = "";
-            let grandTotal = 0;
-
-            for (const name in allOrders) {
-                let userHtml = `<div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <p class="font-bold text-cyan-300 mb-1 border-b border-slate-600 pb-1">${name}</p>`;
-                
-                for (const id in allOrders[name]) {
-                    const info = allOrders[name][id];
-                    userHtml += `<div class="flex justify-between text-xs py-1">
-                        <span>${info.item}</span>
-                        <span class="text-slate-400">NT$${info.price}</span>
-                    </div>`;
-                    grandTotal += info.price;
-                }
-                userHtml += `</div>`;
-                summaryDiv.innerHTML += userHtml;
+            // 生成菜單
+            const menuContainer = document.getElementById('menu-sections');
+            for (const [cat, items] of Object.entries(menuData)) {
+                let html = `<div class="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50">
+                    <h3 class="category-title text-cyan-200 font-black">${cat}</h3>`;
+                items.forEach(item => {
+                    html += `
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800 p-6 rounded-2xl mb-4 border border-slate-700 group hover:border-cyan-900 transition">
+                            <div class="mb-4 md:mb-0">
+                                <div class="text-2xl font-bold text-white group-hover:text-cyan-400 transition">${item.name}</div>
+                                <div class="text-cyan-600 font-mono font-bold text-xl">$${item.price}</div>
+                            </div>
+                            <div class="flex items-center space-x-6 w-full md:w-auto justify-between">
+                                <div class="flex items-center bg-slate-700 rounded-xl overflow-hidden">
+                                    <button onclick="changeQty('${item.name}', -1)" class="px-5 py-2 hover:bg-slate-600 text-2xl font-bold">-</button>
+                                    <input type="number" id="input-${item.name}" value="0" min="0" class="w-16 bg-transparent text-center text-2xl font-bold border-none focus:ring-0">
+                                    <button onclick="changeQty('${item.name}', 1)" class="px-5 py-2 hover:bg-slate-600 text-2xl font-bold">+</button>
+                                </div>
+                                <button onclick="sendOrder('${item.name}', ${item.price})" class="bg-cyan-600 hover:bg-cyan-500 px-8 py-3 rounded-xl font-black text-xl shadow-lg transition active:scale-95">更新點餐</button>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+                menuContainer.innerHTML += html;
             }
-            totalSpan.innerText = grandTotal;
-        });
+        }
+
+        function changeQty(id, delta) {
+            const input = document.getElementById(`input-${id}`);
+            input.value = Math.max(0, parseInt(input.value) + delta);
+        }
+
+        async function sendOrder(itemName, price) {
+            if (!currentMember) return alert("⚠️ 藥師提醒：請先選取您的名字！");
+            const qty = parseInt(document.getElementById(`input-${itemName}`).value);
+
+            const btn = event.currentTarget;
+            btn.disabled = true;
+            btn.innerText = "傳送中...";
+
+            try {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ name: currentMember, item: itemName, price: price, qty: qty })
+                });
+                alert(`✅ ${currentMember}：${itemName} 數量已更新為 ${qty}`);
+                setTimeout(fetchLatestOrders, 1000);
+            } catch (e) {
+                alert("❌ 連線失敗，請檢查網路");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "更新點餐";
+            }
+        }
+
+        async function fetchLatestOrders() {
+            const listDiv = document.getElementById('order-summary-list');
+            try {
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+                
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = '<p class="text-slate-600 text-center py-10">尚無人點餐</p>';
+                    document.getElementById('grandTotalDisplay').innerText = "0";
+                    return;
+                }
+
+                let html = "";
+                let grandTotal = 0;
+                const grouped = data.reduce((acc, obj) => {
+                    acc[obj.name] = acc[obj.name] || [];
+                    acc[obj.name].push(obj);
+                    return acc;
+                }, {});
+
+                for (const name in grouped) {
+                    html += `<div class="bg-slate-700/50 p-5 rounded-2xl border border-slate-600 shadow-inner">
+                        <div class="text-cyan-300 font-black text-2xl border-b border-slate-600 pb-2 mb-3">${name}</div>`;
+                    grouped[name].forEach(o => {
+                        const subtotal = o.price * o.qty;
+                        html += `<div class="flex justify-between items-center mb-2">
+                            <span class="text-slate-100">${o.item} <span class="text-cyan-500 text-sm">x${o.qty}</span></span>
+                            <span class="font-mono text-slate-400">$${subtotal}</span>
+                        </div>`;
+                        grandTotal += subtotal;
+                    });
+                    html += `</div>`;
+                }
+                listDiv.innerHTML = html;
+                document.getElementById('grandTotalDisplay').innerText = grandTotal.toLocaleString();
+            } catch (e) {
+                listDiv.innerHTML = '<p class="text-red-400">讀取資料失敗</p>';
+            }
+        }
+
+        init();
+        fetchLatestOrders();
+        setInterval(fetchLatestOrders, 30000); // 30秒自動更新一次
     </script>
 </body>
 </html>
