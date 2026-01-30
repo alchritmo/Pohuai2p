@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>島之後 - 即時點餐版</title>
+    <title>島之後 - 228 快速點餐</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .active-member { background-color: #06b6d4 !important; border-color: #22d3ee !important; transform: scale(1.05); }
+        .active-member { background-color: #06b6d4 !important; border-color: #22d3ee !important; box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
         .menu-card:active { transform: scale(0.95); }
         body { font-size: 1.2rem; }
+        .category-header { border-left: 5px solid #22d3ee; padding-left: 10px; margin-bottom: 15px; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-10">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
 
-    <div class="max-w-6xl mx-auto px-4 py-6">
-        <header class="text-center mb-8">
-            <h1 class="text-5xl font-black text-cyan-400 mb-2">島之後</h1>
-            <p class="text-slate-400 font-bold">228 台南空山鹿耳 · 快速點餐</p>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-black text-cyan-400 mb-3 tracking-tighter">島之後</h1>
+            <p class="text-xl text-slate-400 font-bold">228 台南空山鹿耳 · 專屬快速點餐</p>
         </header>
 
-        <div class="flex flex-wrap justify-center gap-3 mb-10" id="memberButtons">
-            </div>
+        <section class="mb-12 bg-slate-800/40 p-6 rounded-3xl border border-slate-700">
+            <h2 class="text-2xl font-bold text-cyan-300 mb-6 text-center">誰在點餐？</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="memberButtons">
+                </div>
+        </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-8" id="menuArea">
-                <h2 class="text-2xl font-bold text-cyan-300 border-l-4 border-cyan-500 pl-3">點選菜名直接加入點餐</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div class="lg:col-span-2 space-y-12" id="menuArea">
+                <h2 class="text-2xl font-bold text-cyan-300 mb-4">點擊菜名即可點餐</h2>
             </div>
 
             <div class="lg:col-span-1">
@@ -33,11 +37,12 @@
                         <span>📊 目前匯整</span>
                         <span class="text-xs font-normal text-slate-500 animate-pulse">每 10 秒同步</span>
                     </h2>
-                    <div id="summaryList" class="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-                        </div>
+                    <div id="summaryList" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                        <p class="text-slate-600 text-center py-10 italic">載入資料中...</p>
+                    </div>
                     <div class="mt-6 pt-6 border-t border-slate-700 text-right">
-                        <p class="text-slate-400">總金額</p>
-                        <p class="text-4xl font-black text-green-400 font-mono">NT$ <span id="totalDisplay">0</span></p>
+                        <p class="text-slate-400 text-lg">總計金額</p>
+                        <p class="text-4xl font-black text-green-400">NT$ <span id="totalDisplay">0</span></p>
                     </div>
                 </div>
             </div>
@@ -45,53 +50,64 @@
     </div>
 
     <script>
-        const GAS_URL = "你的GAS網址"; 
-        const members = ["Po Huai 傅懷", "Aone", "Louis 彭顥正", "Morris Cheng", "YULIN 毓麟", "蔡沛庭 Neo", "阿忠 Jasper", "+5"];
-        const menu = {
-            "Pasta": [
+        // --- 請確認此處網址正確 ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec"; 
+        
+        // 更新後的成員名單
+        const members = ["破壞", "萬萬", "阿正", "Morris", "Luka", "Neo", "鐵", "ㄎ"];
+
+        const menuData = {
+            "Pasta 義大利麵": [
                 { name: "蒜梨醬豬五花義大利麵", price: 260 },
-                { name: "海瓜子蛤蠣薄荷清炒義大利麵", price: 280 },
+                { name: "海瓜子蛤蠣薄荷清炒麵", price: 280 },
                 { name: "野菇培根白醬義大利麵", price: 250 },
                 { name: "經典肉醬義大利麵", price: 240 }
             ],
-            "Main Course": [
+            "Main Course 主餐": [
                 { name: "看著玉米田的牛小排", price: 580 },
-                { name: "慢煮豬梅花排佐黑糖奶油汁", price: 380 },
+                { name: "慢煮豬梅花排佐黑糖奶油", price: 380 },
                 { name: "爐烤八兩雞腿排", price: 300 },
-                { name: "油封鴨腿佐全生態小農作物", price: 380 }
+                { name: "油封鴨腿佐小農作物", price: 380 }
             ],
-            "Special & Others": [
+            "Risotto 燉飯": [
+                { name: "干貝小卷章魚汁海鮮燉飯", price: 350 },
+                { name: "剝皮辣椒雞燉飯", price: 280 },
+                { name: "獵人燉雞燉飯", price: 300 },
+                { name: "義式松露野菇玄米茶燉飯", price: 320 }
+            ],
+            "Others 其他": [
                 { name: "沖繩塔可飯", price: 260 },
-                { name: "牛肉漢堡排飯", price: 260 },
                 { name: "今日例湯", price: 50 },
-                { name: "西班牙生火腿水果沙拉(小)", price: 200 }
+                { name: "西班牙生火腿水果沙拉(小)", price: 200 },
+                { name: "幸福炸雞", price: 180 }
             ]
         };
 
         let selectedUser = "";
-        let localOrders = []; // 用於即時 UI 更新
+        let localOrders = [];
 
-        // 初始化
         function init() {
-            const memberDiv = document.getElementById('memberButtons');
+            // 成員按鈕生成
+            const mDiv = document.getElementById('memberButtons');
             members.forEach(m => {
                 const btn = document.createElement('button');
-                btn.className = "px-6 py-3 bg-slate-800 border-2 border-slate-700 rounded-2xl font-bold text-lg hover:border-cyan-400 transition";
+                btn.className = "px-4 py-4 bg-slate-800 border-2 border-slate-700 rounded-2xl font-black text-xl hover:border-cyan-400 transition";
                 btn.innerText = m;
                 btn.onclick = () => {
                     document.querySelectorAll('#memberButtons button').forEach(b => b.classList.remove('active-member'));
                     btn.classList.add('active-member');
                     selectedUser = m;
                 };
-                memberDiv.appendChild(btn);
+                mDiv.appendChild(btn);
             });
 
+            // 菜單生成
             const menuDiv = document.getElementById('menuArea');
-            for (const [cat, items] of Object.entries(menu)) {
-                let html = `<div class="mb-6"><h3 class="text-cyan-200 text-xl font-bold mb-4">${cat}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+            for (const [cat, items] of Object.entries(menuData)) {
+                let html = `<div class="mb-10"><h3 class="category-header text-cyan-200 font-bold text-2xl">${cat}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
                 items.forEach(item => {
-                    html += `<button onclick="quickOrder('${item.name}', ${item.price})" class="menu-card bg-slate-800 p-5 rounded-2xl border border-slate-700 text-left hover:border-cyan-500 transition group">
-                        <div class="text-xl font-bold text-white group-hover:text-cyan-400">${item.name}</div>
+                    html += `<button onclick="quickOrder('${item.name}', ${item.price})" class="menu-card bg-slate-800 p-5 rounded-2xl border border-slate-700 text-left hover:border-cyan-500 transition group shadow-lg">
+                        <div class="text-2xl font-bold text-white group-hover:text-cyan-400">${item.name}</div>
                         <div class="text-cyan-600 font-mono font-bold">$${item.price}</div>
                     </button>`;
                 });
@@ -101,28 +117,24 @@
             fetchData();
         }
 
-        // 點擊菜名直接加 1
+        // 點擊即點餐，預設數量 +1
         async function quickOrder(itemName, price) {
-            if (!selectedUser) return alert("❌ 請先選取您的名字！");
-            
-            // 找出該用戶是否已點過
+            if (!selectedUser) return alert("⚠️ 請先選取您的名字！");
             let order = localOrders.find(o => o.name === selectedUser && o.item === itemName);
             const newQty = order ? parseInt(order.qty) + 1 : 1;
-            
-            await updateRemote(selectedUser, itemName, price, newQty);
+            updateRemote(selectedUser, itemName, price, newQty);
         }
 
-        // 修改數量 (加、減、刪除)
+        // 修改數量按鈕
         async function modifyQty(name, itemName, price, delta) {
             let order = localOrders.find(o => o.name === name && o.item === itemName);
             if (!order) return;
             const newQty = Math.max(0, parseInt(order.qty) + delta);
-            await updateRemote(name, itemName, price, newQty);
+            updateRemote(name, itemName, price, newQty);
         }
 
-        // 統一傳送至 GAS
-        async function updateRemote(name, item, price, qty) {
-            // 優化體驗：先在 local 模擬更新 UI
+        // 背景傳送資料至 Google Sheet
+        function updateRemote(name, item, price, qty) {
             let existing = localOrders.find(o => o.name === name && o.item === item);
             if (existing) {
                 if (qty === 0) localOrders = localOrders.filter(o => o !== existing);
@@ -132,14 +144,11 @@
             }
             renderSummary();
 
-            // 異步傳送
-            try {
-                fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ name, item, price, qty })
-                });
-            } catch (e) { console.error("Sync failed"); }
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ name, item, price, qty })
+            }).catch(e => console.error("Sync Error"));
         }
 
         async function fetchData() {
@@ -147,19 +156,17 @@
                 const response = await fetch(GAS_URL);
                 localOrders = await response.json();
                 renderSummary();
-            } catch (e) { console.error("Fetch failed"); }
+            } catch (e) { console.log("Fetch Error"); }
         }
 
         function renderSummary() {
             const listDiv = document.getElementById('summaryList');
             const totalSpan = document.getElementById('totalDisplay');
-            
             if (localOrders.length === 0) {
-                listDiv.innerHTML = '<p class="text-slate-600 text-center py-10">尚無點餐資料</p>';
+                listDiv.innerHTML = '<p class="text-slate-600 text-center py-10 italic text-lg">目前尚無人點餐</p>';
                 totalSpan.innerText = "0";
                 return;
             }
-
             let html = "";
             let grandTotal = 0;
             const grouped = localOrders.reduce((acc, o) => {
@@ -169,31 +176,30 @@
             }, {});
 
             for (const name in grouped) {
-                html += `<div class="bg-slate-700/40 p-4 rounded-2xl border border-slate-600 mb-4">
-                    <div class="text-cyan-300 font-black text-xl mb-3 border-b border-slate-600 pb-1">${name}</div>`;
+                html += `<div class="bg-slate-700/50 p-5 rounded-2xl border border-slate-600 mb-5 shadow-inner">
+                    <div class="text-cyan-300 font-black text-2xl border-b border-slate-600 pb-2 mb-4">${name}</div>`;
                 grouped[name].forEach(o => {
-                    const subtotal = o.price * o.qty;
-                    grandTotal += subtotal;
-                    html += `<div class="flex justify-between items-center mb-3">
-                        <div class="flex-1">
-                            <div class="text-lg text-white leading-tight">${o.item}</div>
-                            <div class="text-xs text-slate-400 font-mono">$${o.price} / 份</div>
+                    const sub = o.price * o.qty;
+                    grandTotal += sub;
+                    html += `<div class="flex justify-between items-center mb-4">
+                        <div class="flex-1 pr-2">
+                            <div class="text-xl text-white font-bold leading-tight">${o.item}</div>
                         </div>
-                        <div class="flex items-center bg-slate-800 rounded-lg border border-slate-600">
-                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, -1)" class="w-10 h-10 flex items-center justify-center font-bold text-red-400 hover:bg-slate-700">-</button>
-                            <span class="w-10 text-center font-black text-cyan-400">${o.qty}</span>
-                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, 1)" class="w-10 h-10 flex items-center justify-center font-bold text-green-400 hover:bg-slate-700">+</button>
+                        <div class="flex items-center bg-slate-800 rounded-xl border border-slate-600 overflow-hidden">
+                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, -1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-red-500 hover:bg-slate-700">-</button>
+                            <span class="w-12 text-center font-black text-2xl text-cyan-400">${o.qty}</span>
+                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, 1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-green-500 hover:bg-slate-700">+</button>
                         </div>
                     </div>`;
                 });
                 html += `</div>`;
             }
             listDiv.innerHTML = html;
-            totalDisplay.innerText = grandTotal.toLocaleString();
+            totalSpan.innerText = grandTotal.toLocaleString();
         }
 
         init();
-        setInterval(fetchData, 10000); // 10秒自動同步
+        setInterval(fetchData, 10000); // 每 10 秒與 Google Sheet 同步一次
     </script>
 </body>
 </html>
