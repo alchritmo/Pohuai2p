@@ -3,55 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>島之後 In the Island After</title>
+    <title>島之後 - 228 快速點餐</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .member-btn.active { background-color: #06b6d4; border-color: #22d3ee; box-shadow: 0 0 25px rgba(34, 211, 238, 0.7); transform: scale(1.05); }
-        .category-title { border-left: 8px solid #22d3ee; padding-left: 1.5rem; margin-bottom: 2rem; font-size: 2.2rem; font-weight: 900; color: #22d3ee; letter-spacing: -0.05em; }
-        input[type=number]::-webkit-inner-spin-button { opacity: 1; }
-        #order-summary-list::-webkit-scrollbar { width: 5px; }
-        #order-summary-list::-webkit-scrollbar-thumb { background: #0891b2; border-radius: 10px; }
-        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.5); }
+        .active-member { background-color: #06b6d4 !important; border-color: #22d3ee !important; box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
+        .menu-card:active { transform: scale(0.95); }
+        body { font-size: 1.2rem; }
+        .category-header { border-left: 5px solid #22d3ee; padding-left: 10px; margin-bottom: 15px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-40 font-sans tracking-tight">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
 
-    <div class="max-w-6xl mx-auto px-4 py-12">
-        <header class="text-center mb-20">
-            <h1 class="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 via-cyan-500 to-blue-600 tracking-tighter mb-4">在島之後</h1>
-            <p class="text-2xl text-slate-500 font-bold tracking-[0.3em] uppercase opacity-80">After Island · Cloud Ordering System</p>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-black text-cyan-400 mb-3 tracking-tighter">島之後</h1>
+            <p class="text-xl text-slate-400 font-bold">228 台南空山鹿耳 · 專屬快速點餐</p>
         </header>
 
-        <section class="mb-16 glass-card p-10 rounded-[3rem] shadow-2xl text-center border-cyan-900/30">
-            <h2 class="text-3xl font-black text-cyan-400 mb-8 italic">Step 1. 誰在點餐？ (Who's ordering)</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="memberList"></div>
+        <section class="mb-12 bg-slate-800/40 p-6 rounded-3xl border border-slate-700">
+            <h2 class="text-2xl font-bold text-cyan-300 mb-6 text-center">誰在點餐？</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="memberButtons">
+                </div>
         </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-14">
-            <div class="lg:col-span-2 space-y-20" id="menu-sections">
-                <h2 class="text-5xl font-black text-white italic border-b-4 border-slate-800 pb-6 mb-10">Step 2. 選餐 MENU</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div class="lg:col-span-2 space-y-12" id="menuArea">
+                <h2 class="text-2xl font-bold text-cyan-300 mb-4">點擊菜名即可點餐</h2>
             </div>
 
             <div class="lg:col-span-1">
-                <div class="sticky top-10 glass-card rounded-[3rem] p-10 border-2 border-cyan-500 shadow-[0_0_60px_rgba(8,145,178,0.2)]">
-                    <h2 class="text-3xl font-black text-cyan-400 mb-8 flex items-center">
-                        <span class="animate-ping absolute h-4 w-4 rounded-full bg-red-500 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-600 mr-5"></span>
-                        即時匯整清單
+                <div class="sticky top-6 bg-slate-800 rounded-3xl p-6 border-2 border-cyan-500 shadow-2xl">
+                    <h2 class="text-2xl font-black text-cyan-400 mb-6 flex justify-between items-center">
+                        <span>📊 目前匯整</span>
+                        <span class="text-xs font-normal text-slate-500 animate-pulse">每 10 秒同步</span>
                     </h2>
-                    
-                    <div id="order-summary-list" class="space-y-6 max-h-[50vh] overflow-y-auto pr-3 text-xl font-medium">
-                        <p class="text-slate-600 text-center py-10 animate-pulse">正在與雲端同步...</p>
+                    <div id="summaryList" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                        <p class="text-slate-600 text-center py-10 italic">載入資料中...</p>
                     </div>
-
-                    <div class="mt-10 pt-8 border-t-2 border-slate-800 text-right">
-                        <p class="text-slate-500 text-lg font-bold mb-2">Grand Total</p>
-                        <p class="text-6xl font-black text-green-400 tabular-nums">
-                            <span class="text-2xl font-normal mr-1">NT$</span><span id="grandTotalDisplay">0</span>
-                        </p>
-                    </div>
-                    <div class="mt-6 text-center">
-                        <button onclick="fetchFromCloud()" class="text-xs text-cyan-800 hover:text-cyan-400 font-mono tracking-widest uppercase transition-colors">↻ Force Refresh</button>
+                    <div class="mt-6 pt-6 border-t border-slate-700 text-right">
+                        <p class="text-slate-400 text-lg">總計金額</p>
+                        <p class="text-4xl font-black text-green-400">NT$ <span id="totalDisplay">0</span></p>
                     </div>
                 </div>
             </div>
@@ -59,223 +50,156 @@
     </div>
 
     <script>
-        // --- 核心連線網址 ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec";
+        // --- 請確認此處網址正確 ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec"; 
         
-        // --- 藥劑科 8 人名單 ---
-        const members = ["破壞", "阿正", "萬萬", "luka", "Neo", "小鐵", "morrisss", "+ㄎ"];
-        let currentMember = "";
+        // 更新後的成員名單
+        const members = ["破壞", "萬萬", "阿正", "Morris", "Luka", "Neo", "鐵", "ㄎ"];
 
-        // --- 完整菜單數據庫 ---
         const menuData = {
-            "APPETIZER 前菜": [
-                { name: "[烤綜合時蔬]", price: 180, desc: "Grilled Seasonal Vegetables" },
-                { name: "[美式酥炸薯條]", price: 120, desc: "House French Fries" },
-                { name: "[美式肉醬薯條]", price: 200, desc: "純豬義式肉醬 / 小辣 / 自製酸奶醬" },
-                { name: "[幸福炸雞]", price: 180, desc: "雞腿肉 / 皮脆 / 現點現炸 / 自製塔塔醬" },
-                { name: "[印尼風情辣雞翅]", price: 220, desc: "有六隻 / 會辣 / 花生碎 / 香料" },
-                { name: "[挪威鮭魚菠菜醬]", price: 380, desc: "生食級鮭魚 / 澎湖小卷 / 佐杏仁蕎麥奶醬" }
+            "Pasta 義大利麵": [
+                { name: "蒜梨醬豬五花義大利麵", price: 260 },
+                { name: "海瓜子蛤蠣薄荷清炒麵", price: 280 },
+                { name: "野菇培根白醬義大利麵", price: 250 },
+                { name: "經典肉醬義大利麵", price: 240 }
             ],
-            "MAIN COURSE 主餐": [
-                { name: "看著玉米田的牛小排", price: 580, desc: "美國穀飼牛 / 佐經典松露紅酒醬" },
-                { name: "慢煮豬梅花排", price: 380, desc: "黑糖香茅奶油汁 / 焦糖蘋果" },
-                { name: "爐烤八兩雞腿排", price: 300, desc: "製作約20分鐘 / 皮脆心軟肉大塊" },
-                { name: "油封鴨腿佐小農作物", price: 380, desc: "油封鴨腿 / 佐薄荷鴨汁奶油醬" },
-                { name: "配餐麵包/三明治/湯品", price: 50, desc: "Side Bread & Soup" }
+            "Main Course 主餐": [
+                { name: "看著玉米田的牛小排", price: 580 },
+                { name: "慢煮豬梅花排佐黑糖奶油", price: 380 },
+                { name: "爐烤八兩雞腿排", price: 300 },
+                { name: "油封鴨腿佐小農作物", price: 380 }
             ],
-            "SOUP & SALAD 湯品沙拉": [
-                { name: "今日例湯 (Chef Soup)", price: 50, desc: "自熬高湯 / 不用味精 / 看心情煮" },
-                { name: "西班牙生火腿水果沙拉(小)", price: 200, desc: "1~2人份 / 季節水果 / 金桔油醬" },
-                { name: "西班牙生火腿水果沙拉(大)", price: 360, desc: "3~5人份 / 季節水果 / 金桔油醬" },
-                { name: "泰棒了椒麻雞沙拉(小)", price: 180, desc: "1~2人份 / 酥脆炸雞 / 有香菜" },
-                { name: "泰棒了椒麻雞沙拉(大)", price: 380, desc: "3~5人份 / 酥脆炸雞 / 有香菜" }
+            "Risotto 燉飯": [
+                { name: "干貝小卷章魚汁海鮮燉飯", price: 350 },
+                { name: "剝皮辣椒雞燉飯", price: 280 },
+                { name: "獵人燉雞燉飯", price: 300 },
+                { name: "義式松露野菇玄米茶燉飯", price: 320 }
             ],
-            "RISOTTO 燉飯": [
-                { name: "干貝小卷章魚汁燉飯", price: 350, desc: "澎湖生食級小卷 / 北海道干貝 / 薰衣草" },
-                { name: "剝皮辣椒雞燉飯", price: 280, desc: "台東剝皮辣椒 / 自熬雞高湯 / 越光米" },
-                { name: "獵人燉雞燉飯", price: 300, desc: "黑橄欖 / 野菇 / 台灣越光米" },
-                { name: "義式松露野菇燉飯", price: 320, desc: "炸野菇 / 松露醬 / 玄米茶" }
-            ],
-            "PASTA 義大利麵": [
-                { name: "蒜梨醬豬五花麵", price: 260, desc: "豬五花 / 蒜梨醬 (水梨、大蒜)" },
-                { name: "海瓜子蛤蠣薄荷麵", price: 280, desc: "蛤蠣 / 海瓜子 / 白酒煨煮 / 清新薄荷" },
-                { name: "野菇培根白醬麵", price: 250, desc: "自熬雞高湯 / 土雞蛋黃 / 煙燻紅椒粉" },
-                { name: "經典肉醬義大利麵", price: 240, desc: "豬肉 / 番茄紅醬 / 很多辛香料" }
-            ],
-            "SPECIAL 漢堡肉排飯": [
-                { name: "沖繩塔可飯", price: 260, desc: "墨西哥豬肉醬 / 多力多滋 / 自製酸奶醬", options: false },
-                { name: "100%豬肉漢堡排飯", price: 220, desc: "100%純豬肉 / 季節時蔬", options: true },
-                { name: "牛肉漢堡排飯", price: 260, desc: "牛豬比例 8:2 / 季節時蔬", options: true }
+            "Others 其他": [
+                { name: "沖繩塔可飯", price: 260 },
+                { name: "今日例湯", price: 50 },
+                { name: "西班牙生火腿水果沙拉(小)", price: 200 },
+                { name: "幸福炸雞", price: 180 }
             ]
         };
 
-        // --- 初始化 UI ---
+        let selectedUser = "";
+        let localOrders = [];
+
         function init() {
-            const memberContainer = document.getElementById('memberList');
+            // 成員按鈕生成
+            const mDiv = document.getElementById('memberButtons');
             members.forEach(m => {
                 const btn = document.createElement('button');
-                btn.className = "member-btn border-2 border-slate-800 p-6 rounded-3xl text-3xl font-black hover:border-cyan-500 transition-all duration-300 bg-slate-900/50";
+                btn.className = "px-4 py-4 bg-slate-800 border-2 border-slate-700 rounded-2xl font-black text-xl hover:border-cyan-400 transition";
                 btn.innerText = m;
                 btn.onclick = () => {
-                    document.querySelectorAll('.member-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentMember = m;
+                    document.querySelectorAll('#memberButtons button').forEach(b => b.classList.remove('active-member'));
+                    btn.classList.add('active-member');
+                    selectedUser = m;
                 };
-                memberContainer.appendChild(btn);
+                mDiv.appendChild(btn);
             });
 
-            const menuRoot = document.getElementById('menu-sections');
+            // 菜單生成
+            const menuDiv = document.getElementById('menuArea');
             for (const [cat, items] of Object.entries(menuData)) {
-                let html = `<div class="bg-slate-900/40 p-10 rounded-[3rem] border border-slate-800/50 shadow-inner">
-                    <h3 class="category-title italic tracking-tighter">${cat}</h3>`;
+                let html = `<div class="mb-10"><h3 class="category-header text-cyan-200 font-bold text-2xl">${cat}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
                 items.forEach(item => {
-                    let optionHtml = "";
-                    if (item.options) {
-                        optionHtml = `
-                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-lg">
-                                <div class="flex flex-col">
-                                    <label class="text-xs text-slate-500 mb-1 uppercase font-bold tracking-widest">醬汁 Sauce</label>
-                                    <select id="sauce-${item.name}" class="bg-slate-800 text-cyan-400 rounded-xl p-3 border border-slate-700 outline-none focus:border-cyan-500">
-                                        <option value="紅酒醬">紅酒醬 (Red Wine Sauce)</option>
-                                        <option value="蒜梨醬">蒜梨醬 (Peach-Garlic Sauce)</option>
-                                    </select>
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="text-xs text-slate-500 mb-1 uppercase font-bold tracking-widest">加購 Add-ons</label>
-                                    <div class="flex items-center space-x-6 h-full">
-                                        <label class="flex items-center space-x-2 cursor-pointer group">
-                                            <input type="checkbox" id="cheese-${item.name}" class="w-6 h-6 rounded bg-slate-800 border-slate-700 accent-cyan-500">
-                                            <span class="group-hover:text-cyan-400 transition">起司 (+10)</span>
-                                        </label>
-                                        <label class="flex items-center space-x-2 cursor-pointer group">
-                                            <input type="checkbox" id="egg-${item.name}" class="w-6 h-6 rounded bg-slate-800 border-slate-700 accent-cyan-500">
-                                            <span class="group-hover:text-cyan-400 transition">荷包蛋 (+20)</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>`;
-                    }
-                    html += `<div class="bg-slate-900/80 p-8 rounded-[2.5rem] mb-8 border border-slate-800 shadow-xl">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
-                            <div class="mb-6 md:mb-0">
-                                <div class="text-3xl font-bold text-white">${item.name}</div>
-                                <div class="text-slate-500 text-lg mt-1 font-medium">${item.desc}</div>
-                                <div class="text-cyan-600 font-black text-2xl mt-3 tracking-widest italic">NT$ ${item.price}</div>
-                            </div>
-                            <div class="flex items-center space-x-6 w-full md:w-auto">
-                                <div class="flex items-center bg-slate-800 rounded-2xl border border-slate-700 p-1">
-                                    <button onclick="changeQty('${item.name}', -1)" class="w-14 h-14 flex items-center justify-center hover:bg-slate-700 rounded-xl text-3xl font-black text-cyan-500">-</button>
-                                    <input type="number" id="input-${item.name}" value="0" min="0" class="w-16 bg-transparent text-center text-3xl font-black border-none focus:ring-0">
-                                    <button onclick="changeQty('${item.name}', 1)" class="w-14 h-14 flex items-center justify-center hover:bg-slate-700 rounded-xl text-3xl font-black text-cyan-500">+</button>
-                                </div>
-                                <button onclick="sendToCloud('${item.name}', ${item.price}, ${item.options})" class="flex-grow md:flex-none bg-cyan-600 hover:bg-cyan-500 px-10 py-5 rounded-2xl font-black text-2xl shadow-lg transition active:scale-95 text-white">更新</button>
-                            </div>
-                        </div>
-                        ${optionHtml}
-                    </div>`;
+                    html += `<button onclick="quickOrder('${item.name}', ${item.price})" class="menu-card bg-slate-800 p-5 rounded-2xl border border-slate-700 text-left hover:border-cyan-500 transition group shadow-lg">
+                        <div class="text-2xl font-bold text-white group-hover:text-cyan-400">${item.name}</div>
+                        <div class="text-cyan-600 font-mono font-bold">$${item.price}</div>
+                    </button>`;
                 });
-                menuRoot.innerHTML += html + `</div>`;
+                html += `</div></div>`;
+                menuDiv.innerHTML += html;
             }
+            fetchData();
         }
 
-        function changeQty(id, delta) {
-            const input = document.getElementById(`input-${id}`);
-            input.value = Math.max(0, parseInt(input.value) + delta);
+        // 點擊即點餐，預設數量 +1
+        async function quickOrder(itemName, price) {
+            if (!selectedUser) return alert("⚠️ 請先選取您的名字！");
+            let order = localOrders.find(o => o.name === selectedUser && o.item === itemName);
+            const newQty = order ? parseInt(order.qty) + 1 : 1;
+            updateRemote(selectedUser, itemName, price, newQty);
         }
 
-        // --- 多人同步：上傳雲端 ---
-        async function sendToCloud(itemName, price, hasOptions) {
-            if (!currentMember) return alert("📢 藥師提醒：請先選擇點餐人名字！");
-            
-            const qty = parseInt(document.getElementById(`input-${itemName}`).value);
-            let finalName = itemName;
-            let finalPrice = price;
+        // 修改數量按鈕
+        async function modifyQty(name, itemName, price, delta) {
+            let order = localOrders.find(o => o.name === name && o.item === itemName);
+            if (!order) return;
+            const newQty = Math.max(0, parseInt(order.qty) + delta);
+            updateRemote(name, itemName, price, newQty);
+        }
 
-            if (hasOptions && qty > 0) {
-                const sauce = document.getElementById(`sauce-${itemName}`).value;
-                const cheese = document.getElementById(`cheese-${itemName}`).checked;
-                const egg = document.getElementById(`egg-${itemName}`).checked;
-                finalName += ` [${sauce}${cheese?'+起司':''}${egg?'+蛋':''}]`;
-                if (cheese) finalPrice += 10;
-                if (egg) finalPrice += 20;
+        // 背景傳送資料至 Google Sheet
+        function updateRemote(name, item, price, qty) {
+            let existing = localOrders.find(o => o.name === name && o.item === item);
+            if (existing) {
+                if (qty === 0) localOrders = localOrders.filter(o => o !== existing);
+                else existing.qty = qty;
+            } else if (qty > 0) {
+                localOrders.push({ name, item, price, qty });
             }
+            renderSummary();
 
-            const btn = event.currentTarget;
-            btn.innerText = "傳送中...";
-            btn.disabled = true;
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ name, item, price, qty })
+            }).catch(e => console.error("Sync Error"));
+        }
 
+        async function fetchData() {
             try {
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ name: currentMember, item: finalName, price: finalPrice, qty: qty })
-                });
-                btn.innerText = "已更新";
-                btn.classList.replace('bg-cyan-600', 'bg-green-600');
-            } catch (e) {
-                alert("❌ 連線異常，請確認 GAS 部署是否正確");
+                const response = await fetch(GAS_URL);
+                localOrders = await response.json();
+                renderSummary();
+            } catch (e) { console.log("Fetch Error"); }
+        }
+
+        function renderSummary() {
+            const listDiv = document.getElementById('summaryList');
+            const totalSpan = document.getElementById('totalDisplay');
+            if (localOrders.length === 0) {
+                listDiv.innerHTML = '<p class="text-slate-600 text-center py-10 italic text-lg">目前尚無人點餐</p>';
+                totalSpan.innerText = "0";
+                return;
             }
-
-            setTimeout(() => {
-                btn.innerText = "更新";
-                btn.disabled = false;
-                btn.classList.replace('bg-green-600', 'bg-cyan-600');
-            }, 1000);
-            fetchFromCloud();
-        }
-
-        // --- 多人同步：下載雲端 ---
-        async function fetchFromCloud() {
-            try {
-                const res = await fetch(GAS_URL);
-                const data = await res.json();
-                renderSummary(data);
-            } catch (e) { console.error("同步失敗: ", e); }
-        }
-
-        function renderSummary(data) {
-            const listDiv = document.getElementById('order-summary-list');
             let html = "";
             let grandTotal = 0;
-
-            const grouped = data.reduce((acc, obj) => {
-                acc[obj.name] = acc[obj.name] || [];
-                acc[obj.name].push(obj);
+            const grouped = localOrders.reduce((acc, o) => {
+                acc[o.name] = acc[o.name] || [];
+                acc[o.name].push(o);
                 return acc;
             }, {});
 
-            if (data.length === 0) {
-                listDiv.innerHTML = '<p class="text-center py-10 italic text-slate-700">目前尚無人點餐</p>';
-                document.getElementById('grandTotalDisplay').innerText = "0";
-                return;
-            }
-
             for (const name in grouped) {
-                let userSubtotal = 0;
-                html += `<div class="bg-slate-800/80 p-6 rounded-[2rem] border border-slate-700 mb-5 shadow-xl transition-all hover:border-cyan-900">
-                    <div class="text-cyan-400 font-black text-2xl border-b border-slate-700/50 pb-3 mb-4 flex justify-between">
-                        <span>${name}</span>
-                        <span class="text-xs text-slate-500 mt-2 font-mono tabular-nums uppercase tracking-widest">Sub: $${grouped[name].reduce((a,b)=>a+(b.price*b.qty),0)}</span>
-                    </div>`;
+                html += `<div class="bg-slate-700/50 p-5 rounded-2xl border border-slate-600 mb-5 shadow-inner">
+                    <div class="text-cyan-300 font-black text-2xl border-b border-slate-600 pb-2 mb-4">${name}</div>`;
                 grouped[name].forEach(o => {
                     const sub = o.price * o.qty;
-                    userSubtotal += sub;
-                    html += `<div class="flex justify-between text-lg mb-2">
-                        <span class="text-slate-200 font-medium">${o.item} <span class="text-cyan-600 font-black ml-2">x${o.qty}</span></span>
-                        <span class="font-mono text-slate-400 tabular-nums">$${sub}</span>
+                    grandTotal += sub;
+                    html += `<div class="flex justify-between items-center mb-4">
+                        <div class="flex-1 pr-2">
+                            <div class="text-xl text-white font-bold leading-tight">${o.item}</div>
+                        </div>
+                        <div class="flex items-center bg-slate-800 rounded-xl border border-slate-600 overflow-hidden">
+                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, -1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-red-500 hover:bg-slate-700">-</button>
+                            <span class="w-12 text-center font-black text-2xl text-cyan-400">${o.qty}</span>
+                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, 1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-green-500 hover:bg-slate-700">+</button>
+                        </div>
                     </div>`;
                 });
                 html += `</div>`;
-                grandTotal += userSubtotal;
             }
             listDiv.innerHTML = html;
-            document.getElementById('grandTotalDisplay').innerText = grandTotal.toLocaleString();
+            totalSpan.innerText = grandTotal.toLocaleString();
         }
 
         init();
-        fetchFromCloud();
-        // 每 2 秒同步一次
-        setInterval(fetchFromCloud, 2000);
+        setInterval(fetchData, 10000); // 每 10 秒與 Google Sheet 同步一次
     </script>
 </body>
 </html>
