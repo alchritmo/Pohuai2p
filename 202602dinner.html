@@ -3,249 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在島之後 - 智能點餐與自動小計</title>
+    <title>島之後 In the Island After - 藥劑科專屬點餐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #0b2d35;
-            --accent-color: #ffffff;
-            --highlight-color: #4db6ac;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        body {
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--accent-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container { width: 100%; max-width: 650px; }
-
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
-        .header h1 { font-size: 1.8rem; letter-spacing: 5px; margin: 0; }
-
-        /* 人員管理 */
-        .personnel-section { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        input[type="text"] { flex-grow: 1; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; }
-        .add-btn { background: var(--highlight-color); border: none; color: white; padding: 0 15px; border-radius: 4px; cursor: pointer; }
-        .person-list { display: flex; flex-wrap: wrap; gap: 10px; }
-        .person-tag { background: rgba(255,255,255,0.1); padding: 6px 15px; border-radius: 20px; cursor: pointer; border: 1px solid transparent; }
-        .person-tag.active { border-color: var(--highlight-color); background: rgba(77, 182, 172, 0.3); font-weight: bold; }
-
-        /* 菜單區 */
-        .menu-card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .category-title { font-size: 1.1rem; color: var(--highlight-color); border-left: 4px solid var(--highlight-color); padding-left: 10px; margin: 25px 0 15px 0; }
-        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .price { color: #ffd54f; font-weight: bold; min-width: 70px; text-align: right; margin-right: 15px; }
-
-        /* 結帳小計表格 */
-        .summary-section { background: #fff; color: #333; padding: 20px; border-radius: 8px; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .summary-section h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: var(--bg-color); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; border-bottom: 1px solid #ddd; padding: 10px; background: #f9f9f9; }
-        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
-        .total-row { font-weight: bold; font-size: 1.2rem; color: #d32f2f; background: #fffde7; }
-
-        /* 固定送出按鈕 */
-        .submit-area { position: sticky; bottom: 20px; text-align: center; padding: 20px 0; z-index: 100; }
-        #submitBtn { background: #fff; color: var(--bg-color); border: none; padding: 15px 60px; font-size: 1.1rem; font-weight: bold; border-radius: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.2s; }
-        #submitBtn:active { transform: translateY(3px); }
-
-        /* 日誌 */
-        .status-panel { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-top: 20px; font-family: monospace; font-size: 0.8rem; opacity: 0.7; }
-        .status-line { color: #88ff88; }
+        .member-btn.active { background-color: #06b6d4; border-color: #22d3ee; box-shadow: 0 0 25px rgba(34, 211, 238, 0.7); transform: scale(1.05); }
+        .category-title { border-left: 8px solid #22d3ee; padding-left: 1.5rem; margin-bottom: 2rem; font-size: 2.2rem; font-weight: 900; color: #22d3ee; letter-spacing: -0.05em; }
+        input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+        #order-summary-list::-webkit-scrollbar { width: 5px; }
+        #order-summary-list::-webkit-scrollbar-thumb { background: #0891b2; border-radius: 10px; }
+        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.5); }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-40 font-sans tracking-tight">
 
-<div class="container">
-    <div class="header">
-        <h1>在島之後</h1>
-        <p>AFTER ISLAND - 團體點餐系統</p>
-    </div>
+    <div class="max-w-6xl mx-auto px-4 py-12">
+        <header class="text-center mb-20">
+            <h1 class="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 via-cyan-500 to-blue-600 tracking-tighter mb-4">在島之後</h1>
+            <p class="text-2xl text-slate-500 font-bold tracking-[0.3em] uppercase opacity-80">After Island · Cloud Ordering System</p>
+        </header>
 
-    <div class="personnel-section">
-        <div style="margin-bottom: 10px;">目前點餐：<b id="currentUserDisplay" style="color:var(--highlight-color)">一起吃</b></div>
-        <div class="input-group">
-            <input type="text" id="personNameInput" placeholder="輸入同事/朋友姓名...">
-            <button class="add-btn" onclick="addPerson()">新增</button>
-        </div>
-        <div class="person-list" id="personList">
-            <div class="person-tag active" onclick="selectPerson(this)">一起吃</div>
-        </div>
-    </div>
+        <section class="mb-16 glass-card p-10 rounded-[3rem] shadow-2xl text-center border-cyan-900/30">
+            <h2 class="text-3xl font-black text-cyan-400 mb-8 italic">Step 1. 誰在點餐？ (Who's ordering)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6" id="memberList"></div>
+        </section>
 
-    <div class="menu-card" id="menuContent">
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-14">
+            <div class="lg:col-span-2 space-y-20" id="menu-sections">
+                <h2 class="text-5xl font-black text-white italic border-b-4 border-slate-800 pb-6 mb-10">Step 2. 選餐 MENU</h2>
+            </div>
 
-    <div class="submit-area">
-        <button id="submitBtn" onclick="sendOrder()">確定送出 (加到我的帳單)</button>
-    </div>
-
-    <div class="summary-section">
-        <h3>💰 結帳小計清單</h3>
-        <table id="summaryTable">
-            <thead>
-                <tr>
-                    <th>姓名</th>
-                    <th>點餐細節</th>
-                    <th>小計</th>
-                </tr>
-            </thead>
-            <tbody id="summaryBody">
-                <tr><td colspan="3" style="text-align:center; color:#999;">尚未有點餐紀錄</td></tr>
-            </tbody>
-            <tfoot>
-                <tr class="total-row">
-                    <td colspan="2">全體總計金額</td>
-                    <td id="grandTotal">NT.0</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-
-    <div class="status-panel">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>系統狀態 (2s 自動更新)</span>
-            <span id="updateTime"></span>
-        </div>
-        <div id="statusLog"></div>
-    </div>
-</div>
-
-<script>
-    // --- 完整菜單資料 (含價格) ---
-    const menuData = {
-        "Appetizer 前菜": [
-            { id: 1, name: "[烤綜合時蔬]", price: 180 },
-            { id: 2, name: "[美式酥炸薯條]", price: 120 },
-            { id: 3, name: "[幸福炸雞]", price: 180 },
-            { id: 4, name: "[印尼風情辣雞翅]", price: 220 }
-        ],
-        "Main Course 主餐": [
-            { id: 5, name: "看著玉米田的牛小排", price: 580 },
-            { id: 6, name: "慢煮豬梅花排", price: 380 },
-            { id: 7, name: "爐烤八兩雞腿排", price: 300 },
-            { id: 8, name: "油封鴨腿", price: 380 }
-        ],
-        "Risotto/Pasta 飯麵": [
-            { id: 9, name: "干貝小卷章魚汁燉飯", price: 350 },
-            { id: 10, name: "剝皮辣椒雞燉飯", price: 280 },
-            { id: 11, name: "蒜梨醬豬五花義大利麵", price: 260 }
-        ]
-    };
-
-    // 儲存所有人的訂單紀錄
-    let allOrders = {}; // 格式: { "張三": { items: ["雞腿排", "薯條"], total: 420 } }
-    let selectedPerson = "一起吃";
-
-    // 1. 初始化菜單
-    function initMenu() {
-        const menuContainer = document.getElementById('menuContent');
-        for (const [cat, items] of Object.entries(menuData)) {
-            let html = `<div class="category-title">${cat}</div>`;
-            items.forEach(item => {
-                html += `
-                    <div class="item">
-                        <span>${item.name}</span>
-                        <div style="display:flex; align-items:center">
-                            <span class="price">NT.${item.price}</span>
-                            <input type="checkbox" class="menu-cb" data-name="${item.name}" data-price="${item.price}">
-                        </div>
+            <div class="lg:col-span-1">
+                <div class="sticky top-10 glass-card rounded-[3rem] p-10 border-2 border-cyan-500 shadow-[0_0_60px_rgba(8,145,178,0.2)]">
+                    <h2 class="text-3xl font-black text-cyan-400 mb-8 flex items-center">
+                        <span class="animate-ping absolute h-4 w-4 rounded-full bg-red-500 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-600 mr-5"></span>
+                        即時匯整清單
+                    </h2>
+                    
+                    <div id="order-summary-list" class="space-y-6 max-h-[50vh] overflow-y-auto pr-3 text-xl font-medium">
+                        <p class="text-slate-600 text-center py-10 animate-pulse">正在與雲端同步...</p>
                     </div>
-                `;
+
+                    <div class="mt-10 pt-8 border-t-2 border-slate-800 text-right">
+                        <p class="text-slate-500 text-lg font-bold mb-2">Grand Total</p>
+                        <p class="text-6xl font-black text-green-400 tabular-nums">
+                            <span class="text-2xl font-normal mr-1">NT$</span><span id="grandTotalDisplay">0</span>
+                        </p>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button onclick="fetchFromCloud()" class="text-xs text-cyan-800 hover:text-cyan-400 font-mono tracking-widest uppercase transition-colors">↻ Force Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心連線網址 ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec";
+        
+        // --- 藥劑科 8 人名單 ---
+        const members = ["破壞", "阿正", "萬萬", "luka", "Neo", "小鐵", "morrisss", "+ㄎ"];
+        let currentMember = "";
+
+        // --- 完整菜單數據庫 ---
+        const menuData = {
+            "APPETIZER 前菜": [
+                { name: "[烤綜合時蔬]", price: 180, desc: "Grilled Seasonal Vegetables" },
+                { name: "[美式酥炸薯條]", price: 120, desc: "House French Fries" },
+                { name: "[美式肉醬薯條]", price: 200, desc: "純豬義式肉醬 / 小辣 / 自製酸奶醬" },
+                { name: "[幸福炸雞]", price: 180, desc: "雞腿肉 / 皮脆 / 現點現炸 / 自製塔塔醬" },
+                { name: "[印尼風情辣雞翅]", price: 220, desc: "有六隻 / 會辣 / 花生碎 / 香料" },
+                { name: "[挪威鮭魚菠菜醬]", price: 380, desc: "生食級鮭魚 / 澎湖小卷 / 佐杏仁蕎麥奶醬" }
+            ],
+            "MAIN COURSE 主餐": [
+                { name: "看著玉米田的牛小排", price: 580, desc: "美國穀飼牛 / 佐經典松露紅酒醬" },
+                { name: "慢煮豬梅花排", price: 380, desc: "黑糖香茅奶油汁 / 焦糖蘋果" },
+                { name: "爐烤八兩雞腿排", price: 300, desc: "製作約20分鐘 / 皮脆心軟肉大塊" },
+                { name: "油封鴨腿佐小農作物", price: 380, desc: "油封鴨腿 / 佐薄荷鴨汁奶油醬" },
+                { name: "配餐麵包/三明治/湯品", price: 50, desc: "Side Bread & Soup" }
+            ],
+            "SOUP & SALAD 湯品沙拉": [
+                { name: "今日例湯 (Chef Soup)", price: 50, desc: "自熬高湯 / 不用味精 / 看心情煮" },
+                { name: "西班牙生火腿水果沙拉(小)", price: 200, desc: "1~2人份 / 季節水果 / 金桔油醬" },
+                { name: "西班牙生火腿水果沙拉(大)", price: 360, desc: "3~5人份 / 季節水果 / 金桔油醬" },
+                { name: "泰棒了椒麻雞沙拉(小)", price: 180, desc: "1~2人份 / 酥脆炸雞 / 有香菜" },
+                { name: "泰棒了椒麻雞沙拉(大)", price: 380, desc: "3~5人份 / 酥脆炸雞 / 有香菜" }
+            ],
+            "RISOTTO 燉飯": [
+                { name: "干貝小卷章魚汁燉飯", price: 350, desc: "澎湖生食級小卷 / 北海道干貝 / 薰衣草" },
+                { name: "剝皮辣椒雞燉飯", price: 280, desc: "台東剝皮辣椒 / 自熬雞高湯 / 越光米" },
+                { name: "獵人燉雞燉飯", price: 300, desc: "黑橄欖 / 野菇 / 台灣越光米" },
+                { name: "義式松露野菇燉飯", price: 320, desc: "炸野菇 / 松露醬 / 玄米茶" }
+            ],
+            "PASTA 義大利麵": [
+                { name: "蒜梨醬豬五花麵", price: 260, desc: "豬五花 / 蒜梨醬 (水梨、大蒜)" },
+                { name: "海瓜子蛤蠣薄荷麵", price: 280, desc: "蛤蠣 / 海瓜子 / 白酒煨煮 / 清新薄荷" },
+                { name: "野菇培根白醬麵", price: 250, desc: "自熬雞高湯 / 土雞蛋黃 / 煙燻紅椒粉" },
+                { name: "經典肉醬義大利麵", price: 240, desc: "豬肉 / 番茄紅醬 / 很多辛香料" }
+            ],
+            "SPECIAL 漢堡肉排飯": [
+                { name: "沖繩塔可飯", price: 260, desc: "墨西哥豬肉醬 / 多力多滋 / 自製酸奶醬", options: false },
+                { name: "100%豬肉漢堡排飯", price: 220, desc: "100%純豬肉 / 季節時蔬", options: true },
+                { name: "牛肉漢堡排飯", price: 260, desc: "牛豬比例 8:2 / 季節時蔬", options: true }
+            ]
+        };
+
+        // --- 初始化 UI ---
+        function init() {
+            const memberContainer = document.getElementById('memberList');
+            members.forEach(m => {
+                const btn = document.createElement('button');
+                btn.className = "member-btn border-2 border-slate-800 p-6 rounded-3xl text-3xl font-black hover:border-cyan-500 transition-all duration-300 bg-slate-900/50";
+                btn.innerText = m;
+                btn.onclick = () => {
+                    document.querySelectorAll('.member-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMember = m;
+                };
+                memberContainer.appendChild(btn);
             });
-            menuContainer.innerHTML += html;
+
+            const menuRoot = document.getElementById('menu-sections');
+            for (const [cat, items] of Object.entries(menuData)) {
+                let html = `<div class="bg-slate-900/40 p-10 rounded-[3rem] border border-slate-800/50 shadow-inner">
+                    <h3 class="category-title italic tracking-tighter">${cat}</h3>`;
+                items.forEach(item => {
+                    let optionHtml = "";
+                    if (item.options) {
+                        optionHtml = `
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-lg">
+                                <div class="flex flex-col">
+                                    <label class="text-xs text-slate-500 mb-1 uppercase font-bold tracking-widest">醬汁 Sauce</label>
+                                    <select id="sauce-${item.name}" class="bg-slate-800 text-cyan-400 rounded-xl p-3 border border-slate-700 outline-none focus:border-cyan-500">
+                                        <option value="紅酒醬">紅酒醬 (Red Wine Sauce)</option>
+                                        <option value="蒜梨醬">蒜梨醬 (Peach-Garlic Sauce)</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col">
+                                    <label class="text-xs text-slate-500 mb-1 uppercase font-bold tracking-widest">加購 Add-ons</label>
+                                    <div class="flex items-center space-x-6 h-full">
+                                        <label class="flex items-center space-x-2 cursor-pointer group">
+                                            <input type="checkbox" id="cheese-${item.name}" class="w-6 h-6 rounded bg-slate-800 border-slate-700 accent-cyan-500">
+                                            <span class="group-hover:text-cyan-400 transition">起司 (+10)</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer group">
+                                            <input type="checkbox" id="egg-${item.name}" class="w-6 h-6 rounded bg-slate-800 border-slate-700 accent-cyan-500">
+                                            <span class="group-hover:text-cyan-400 transition">荷包蛋 (+20)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                    html += `<div class="bg-slate-900/80 p-8 rounded-[2.5rem] mb-8 border border-slate-800 shadow-xl">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div class="mb-6 md:mb-0">
+                                <div class="text-3xl font-bold text-white">${item.name}</div>
+                                <div class="text-slate-500 text-lg mt-1 font-medium">${item.desc}</div>
+                                <div class="text-cyan-600 font-black text-2xl mt-3 tracking-widest italic">NT$ ${item.price}</div>
+                            </div>
+                            <div class="flex items-center space-x-6 w-full md:w-auto">
+                                <div class="flex items-center bg-slate-800 rounded-2xl border border-slate-700 p-1">
+                                    <button onclick="changeQty('${item.name}', -1)" class="w-14 h-14 flex items-center justify-center hover:bg-slate-700 rounded-xl text-3xl font-black text-cyan-500">-</button>
+                                    <input type="number" id="input-${item.name}" value="0" min="0" class="w-16 bg-transparent text-center text-3xl font-black border-none focus:ring-0">
+                                    <button onclick="changeQty('${item.name}', 1)" class="w-14 h-14 flex items-center justify-center hover:bg-slate-700 rounded-xl text-3xl font-black text-cyan-500">+</button>
+                                </div>
+                                <button onclick="sendToCloud('${item.name}', ${item.price}, ${item.options})" class="flex-grow md:flex-none bg-cyan-600 hover:bg-cyan-500 px-10 py-5 rounded-2xl font-black text-2xl shadow-lg transition active:scale-95 text-white">更新</button>
+                            </div>
+                        </div>
+                        ${optionHtml}
+                    </div>`;
+                });
+                menuRoot.innerHTML += html + `</div>`;
+            }
         }
-    }
 
-    // 2. 人員選擇
-    function addPerson() {
-        const name = document.getElementById('personNameInput').value.trim();
-        if (!name) return;
-        const list = document.getElementById('personList');
-        const tag = document.createElement('div');
-        tag.className = 'person-tag';
-        tag.innerText = name;
-        tag.onclick = function() { selectPerson(this); };
-        list.appendChild(tag);
-        document.getElementById('personNameInput').value = "";
-    }
-
-    function selectPerson(el) {
-        document.querySelectorAll('.person-tag').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-        selectedPerson = el.innerText;
-        document.getElementById('currentUserDisplay').innerText = selectedPerson;
-    }
-
-    // 3. 送出訂單並計算小計
-    function sendOrder() {
-        const checkedItems = document.querySelectorAll('.menu-cb:checked');
-        if (checkedItems.length === 0) return alert("請至少選擇一項餐點");
-
-        let currentItems = [];
-        let currentTotal = 0;
-
-        checkedItems.forEach(cb => {
-            currentItems.push(cb.getAttribute('data-name'));
-            currentTotal += parseInt(cb.getAttribute('data-price'));
-            cb.checked = false; // 送出後清空勾選
-        });
-
-        // 更新帳單紀錄 (如果同一個人點兩次，會累加)
-        if (!allOrders[selectedPerson]) {
-            allOrders[selectedPerson] = { items: [], total: 0 };
+        function changeQty(id, delta) {
+            const input = document.getElementById(`input-${id}`);
+            input.value = Math.max(0, parseInt(input.value) + delta);
         }
-        allOrders[selectedPerson].items.push(...currentItems);
-        allOrders[selectedPerson].total += currentTotal;
 
-        updateSummaryTable();
-        logSystem(`[訂單已接收] ${selectedPerson} 點了 ${currentItems.length} 項，金額 $${currentTotal}`);
-    }
+        // --- 多人同步：上傳雲端 ---
+        async function sendToCloud(itemName, price, hasOptions) {
+            if (!currentMember) return alert("📢 藥師提醒：請先選擇點餐人名字！");
+            
+            const qty = parseInt(document.getElementById(`input-${itemName}`).value);
+            let finalName = itemName;
+            let finalPrice = price;
 
-    // 4. 更新小計表格
-    function updateSummaryTable() {
-        const body = document.getElementById('summaryBody');
-        const grandTotalEl = document.getElementById('grandTotal');
-        body.innerHTML = "";
-        let grandTotal = 0;
+            if (hasOptions && qty > 0) {
+                const sauce = document.getElementById(`sauce-${itemName}`).value;
+                const cheese = document.getElementById(`cheese-${itemName}`).checked;
+                const egg = document.getElementById(`egg-${itemName}`).checked;
+                finalName += ` [${sauce}${cheese?'+起司':''}${egg?'+蛋':''}]`;
+                if (cheese) finalPrice += 10;
+                if (egg) finalPrice += 20;
+            }
 
-        for (const [name, data] of Object.entries(allOrders)) {
-            const row = `
-                <tr>
-                    <td><b>${name}</b></td>
-                    <td style="font-size:0.85rem">${data.items.join('、')}</td>
-                    <td style="color:#d32f2f">NT.${data.total}</td>
-                </tr>
-            `;
-            body.innerHTML += row;
-            grandTotal += data.total;
+            const btn = event.currentTarget;
+            btn.innerText = "傳送中...";
+            btn.disabled = true;
+
+            try {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ name: currentMember, item: finalName, price: finalPrice, qty: qty })
+                });
+                btn.innerText = "已更新";
+                btn.classList.replace('bg-cyan-600', 'bg-green-600');
+            } catch (e) {
+                alert("❌ 連線異常，請確認 GAS 部署是否正確");
+            }
+
+            setTimeout(() => {
+                btn.innerText = "更新";
+                btn.disabled = false;
+                btn.classList.replace('bg-green-600', 'bg-cyan-600');
+            }, 1000);
+            fetchFromCloud();
         }
-        grandTotalEl.innerText = `NT.${grandTotal}`;
-    }
 
-    // 5. 自動更新日誌 (模擬後端)
-    function logSystem(msg) {
-        const log = document.getElementById('statusLog');
-        const time = new Date().toLocaleTimeString();
-        log.innerHTML = `<div class="status-line">>> [${time}] ${msg}</div>` + log.innerHTML;
-        document.getElementById('updateTime').innerText = time;
-    }
+        // --- 多人同步：下載雲端 ---
+        async function fetchFromCloud() {
+            try {
+                const res = await fetch(GAS_URL);
+                const data = await res.json();
+                renderSummary(data);
+            } catch (e) { console.error("同步失敗: ", e); }
+        }
 
-    setInterval(() => {
-        const randomMsgs = ["連線穩定", "廚房接收中", "雲端同步完成", "自動備份中"];
-        logSystem(randomMsgs[Math.floor(Math.random()*randomMsgs.length)]);
-    }, 2000);
+        function renderSummary(data) {
+            const listDiv = document.getElementById('order-summary-list');
+            let html = "";
+            let grandTotal = 0;
 
-    initMenu();
-</script>
+            const grouped = data.reduce((acc, obj) => {
+                acc[obj.name] = acc[obj.name] || [];
+                acc[obj.name].push(obj);
+                return acc;
+            }, {});
 
+            if (data.length === 0) {
+                listDiv.innerHTML = '<p class="text-center py-10 italic text-slate-700">目前尚無人點餐</p>';
+                document.getElementById('grandTotalDisplay').innerText = "0";
+                return;
+            }
+
+            for (const name in grouped) {
+                let userSubtotal = 0;
+                html += `<div class="bg-slate-800/80 p-6 rounded-[2rem] border border-slate-700 mb-5 shadow-xl transition-all hover:border-cyan-900">
+                    <div class="text-cyan-400 font-black text-2xl border-b border-slate-700/50 pb-3 mb-4 flex justify-between">
+                        <span>${name}</span>
+                        <span class="text-xs text-slate-500 mt-2 font-mono tabular-nums uppercase tracking-widest">Sub: $${grouped[name].reduce((a,b)=>a+(b.price*b.qty),0)}</span>
+                    </div>`;
+                grouped[name].forEach(o => {
+                    const sub = o.price * o.qty;
+                    userSubtotal += sub;
+                    html += `<div class="flex justify-between text-lg mb-2">
+                        <span class="text-slate-200 font-medium">${o.item} <span class="text-cyan-600 font-black ml-2">x${o.qty}</span></span>
+                        <span class="font-mono text-slate-400 tabular-nums">$${sub}</span>
+                    </div>`;
+                });
+                html += `</div>`;
+                grandTotal += userSubtotal;
+            }
+            listDiv.innerHTML = html;
+            document.getElementById('grandTotalDisplay').innerText = grandTotal.toLocaleString();
+        }
+
+        init();
+        fetchFromCloud();
+        // 每 2 秒同步一次
+        setInterval(fetchFromCloud, 2000);
+    </script>
 </body>
 </html>
