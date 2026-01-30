@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在島之後 - 即時點餐系統</title>
+    <title>在島之後 - 智能點餐與自動小計</title>
     <style>
         :root {
-            --bg-color: #0b2d35; /* 圖片中的深青色 */
+            --bg-color: #0b2d35;
             --accent-color: #ffffff;
             --highlight-color: #4db6ac;
-            --border-color: rgba(255, 255, 255, 0.3);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.2);
         }
 
         body {
@@ -23,234 +24,227 @@
             align-items: center;
         }
 
-        .menu-container {
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid var(--border-color);
-            padding: 25px;
-            border-radius: 4px;
-            background: linear-gradient(135deg, #0b2d35 0%, #15454f 100%);
-        }
+        .container { width: 100%; max-width: 650px; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        .header h1 { font-size: 1.8rem; letter-spacing: 5px; margin: 0; }
 
-        .header h1 {
-            font-size: 1.5rem;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
-        }
+        /* 人員管理 */
+        .personnel-section { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        input[type="text"] { flex-grow: 1; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white; }
+        .add-btn { background: var(--highlight-color); border: none; color: white; padding: 0 15px; border-radius: 4px; cursor: pointer; }
+        .person-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .person-tag { background: rgba(255,255,255,0.1); padding: 6px 15px; border-radius: 20px; cursor: pointer; border: 1px solid transparent; }
+        .person-tag.active { border-color: var(--highlight-color); background: rgba(77, 182, 172, 0.3); font-weight: bold; }
 
-        .section-title {
-            font-size: 1.2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 5px;
-            margin: 20px 0 15px 0;
-            text-transform: uppercase;
-        }
+        /* 菜單區 */
+        .menu-card { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .category-title { font-size: 1.1rem; color: var(--highlight-color); border-left: 4px solid var(--highlight-color); padding-left: 10px; margin: 25px 0 15px 0; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .price { color: #ffd54f; font-weight: bold; min-width: 70px; text-align: right; margin-right: 15px; }
 
-        /* 菜單品項 */
-        .item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+        /* 結帳小計表格 */
+        .summary-section { background: #fff; color: #333; padding: 20px; border-radius: 8px; margin-top: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .summary-section h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: var(--bg-color); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; border-bottom: 1px solid #ddd; padding: 10px; background: #f9f9f9; }
+        td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .total-row { font-weight: bold; font-size: 1.2rem; color: #d32f2f; background: #fffde7; }
 
-        .item-info {
-            flex-grow: 1;
-        }
+        /* 固定送出按鈕 */
+        .submit-area { position: sticky; bottom: 20px; text-align: center; padding: 20px 0; z-index: 100; }
+        #submitBtn { background: #fff; color: var(--bg-color); border: none; padding: 15px 60px; font-size: 1.1rem; font-weight: bold; border-radius: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.2s; }
+        #submitBtn:active { transform: translateY(3px); }
 
-        .item-name {
-            font-weight: bold;
-            display: block;
-        }
-
-        .item-sub {
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-
-        .price {
-            margin-right: 15px;
-            font-family: monospace;
-        }
-
-        /* 輸入與按鈕 */
-        .order-action {
-            margin-top: 30px;
-            border-top: 2px dashed var(--border-color);
-            padding-top: 20px;
-            text-align: center;
-        }
-
-        #submitBtn {
-            background-color: transparent;
-            color: white;
-            border: 1px solid white;
-            padding: 10px 40px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        #submitBtn:hover {
-            background-color: white;
-            color: var(--bg-color);
-        }
-
-        #submitBtn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* 自動更新區塊 */
-        .status-panel {
-            margin-top: 20px;
-            width: 100%;
-            max-width: 500px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            color: var(--highlight-color);
-            margin-bottom: 10px;
-            font-size: 0.8rem;
-        }
-
-        .order-item {
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .badge-update {
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0.3; }
-        }
+        /* 日誌 */
+        .status-panel { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-top: 20px; font-family: monospace; font-size: 0.8rem; opacity: 0.7; }
+        .status-line { color: #88ff88; }
     </style>
 </head>
 <body>
 
-<div class="menu-container">
+<div class="container">
     <div class="header">
         <h1>在島之後</h1>
-        <div style="font-size: 0.7rem; opacity: 0.6;">AFTER ISLAND</div>
+        <p>AFTER ISLAND - 團體點餐系統</p>
     </div>
 
-    <div class="section-title">Appetizer</div>
-    
-    <div class="item">
-        <div class="item-info">
-            <span class="item-name">[烤綜合時蔬]</span>
-            <span class="item-sub">Grilled Seasonal Vegetables</span>
+    <div class="personnel-section">
+        <div style="margin-bottom: 10px;">目前點餐：<b id="currentUserDisplay" style="color:var(--highlight-color)">一起吃</b></div>
+        <div class="input-group">
+            <input type="text" id="personNameInput" placeholder="輸入同事/朋友姓名...">
+            <button class="add-btn" onclick="addPerson()">新增</button>
         </div>
-        <span class="price">NT.180</span>
-        <input type="checkbox" class="menu-item" value="烤綜合時蔬">
-    </div>
-
-    <div class="item">
-        <div class="item-info">
-            <span class="item-name">[幸福炸雞]</span>
-            <span class="item-sub">House Fried Chicken</span>
+        <div class="person-list" id="personList">
+            <div class="person-tag active" onclick="selectPerson(this)">一起吃</div>
         </div>
-        <span class="price">NT.180</span>
-        <input type="checkbox" class="menu-item" value="幸福炸雞">
     </div>
 
-    <div class="section-title">Main Course</div>
-
-    <div class="item">
-        <div class="item-info">
-            <span class="item-name">看著玉米田的牛小排</span>
-            <span class="item-sub">Beef short rib with truffle sauce</span>
+    <div class="menu-card" id="menuContent">
         </div>
-        <span class="price">NT.580</span>
-        <input type="checkbox" class="menu-item" value="牛小排">
+
+    <div class="submit-area">
+        <button id="submitBtn" onclick="sendOrder()">確定送出 (加到我的帳單)</button>
     </div>
 
-    <div class="order-action">
-        <button id="submitBtn">確定送出</button>
+    <div class="summary-section">
+        <h3>💰 結帳小計清單</h3>
+        <table id="summaryTable">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>點餐細節</th>
+                    <th>小計</th>
+                </tr>
+            </thead>
+            <tbody id="summaryBody">
+                <tr><td colspan="3" style="text-align:center; color:#999;">尚未有點餐紀錄</td></tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2">全體總計金額</td>
+                    <td id="grandTotal">NT.0</td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
-</div>
 
-<div class="status-panel">
-    <div class="status-header">
-        <span>● 即時出餐狀態 (模擬自動更新)</span>
-        <span id="timer" class="badge-update">更新中...</span>
-    </div>
-    <div id="live-orders">
+    <div class="status-panel">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span>系統狀態 (2s 自動更新)</span>
+            <span id="updateTime"></span>
         </div>
+        <div id="statusLog"></div>
+    </div>
 </div>
 
 <script>
-    const submitBtn = document.getElementById('submitBtn');
-    const checkboxes = document.querySelectorAll('.menu-item');
-    const liveOrdersDiv = document.getElementById('live-orders');
-    const timerText = document.getElementById('timer');
+    // --- 完整菜單資料 (含價格) ---
+    const menuData = {
+        "Appetizer 前菜": [
+            { id: 1, name: "[烤綜合時蔬]", price: 180 },
+            { id: 2, name: "[美式酥炸薯條]", price: 120 },
+            { id: 3, name: "[幸福炸雞]", price: 180 },
+            { id: 4, name: "[印尼風情辣雞翅]", price: 220 }
+        ],
+        "Main Course 主餐": [
+            { id: 5, name: "看著玉米田的牛小排", price: 580 },
+            { id: 6, name: "慢煮豬梅花排", price: 380 },
+            { id: 7, name: "爐烤八兩雞腿排", price: 300 },
+            { id: 8, name: "油封鴨腿", price: 380 }
+        ],
+        "Risotto/Pasta 飯麵": [
+            { id: 9, name: "干貝小卷章魚汁燉飯", price: 350 },
+            { id: 10, name: "剝皮辣椒雞燉飯", price: 280 },
+            { id: 11, name: "蒜梨醬豬五花義大利麵", price: 260 }
+        ]
+    };
 
-    // 1. 【確定送出】功能
-    submitBtn.addEventListener('click', async () => {
-        const selected = Array.from(checkboxes)
-            .filter(i => i.checked)
-            .map(i => i.value);
+    // 儲存所有人的訂單紀錄
+    let allOrders = {}; // 格式: { "張三": { items: ["雞腿排", "薯條"], total: 420 } }
+    let selectedPerson = "一起吃";
 
-        if (selected.length === 0) {
-            alert("請至少選擇一項餐點");
-            return;
+    // 1. 初始化菜單
+    function initMenu() {
+        const menuContainer = document.getElementById('menuContent');
+        for (const [cat, items] of Object.entries(menuData)) {
+            let html = `<div class="category-title">${cat}</div>`;
+            items.forEach(item => {
+                html += `
+                    <div class="item">
+                        <span>${item.name}</span>
+                        <div style="display:flex; align-items:center">
+                            <span class="price">NT.${item.price}</span>
+                            <input type="checkbox" class="menu-cb" data-name="${item.name}" data-price="${item.price}">
+                        </div>
+                    </div>
+                `;
+            });
+            menuContainer.innerHTML += html;
         }
-
-        // 模擬送出
-        submitBtn.disabled = true;
-        submitBtn.innerText = "傳送至廚房...";
-
-        await new Promise(res => setTimeout(res, 1000));
-
-        alert("訂單已送出！點餐內容：" + selected.join(", "));
-        
-        // 清空選擇並恢復按鈕
-        checkboxes.forEach(i => i.checked = false);
-        submitBtn.disabled = false;
-        submitBtn.innerText = "確定送出";
-        
-        // 立即觸發一次更新，讓使用者看到反饋
-        updateStatus();
-    });
-
-    // 2. 【2秒自動更新】功能
-    function updateStatus() {
-        const now = new Date();
-        const timeStr = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-        
-        // 模擬從資料庫抓取的隨機數據
-        const mockStatuses = ["製作中", "即時排單", "已出餐"];
-        const randomStatus = mockStatuses[Math.floor(Math.random() * mockStatuses.length)];
-
-        timerText.innerText = "上次更新: " + timeStr;
-        
-        // 更新內容區域而不影響使用者操作輸入框
-        liveOrdersDiv.innerHTML = `
-            <div class="order-item">
-                <small>[系統通知] 當前排隊桌號：${Math.floor(Math.random()*10 + 1)} | 狀態：${randomStatus}</small>
-            </div>
-        `;
-        console.log("資料已自動更新");
     }
 
-    // 設定定時器：2000 毫秒
-    setInterval(updateStatus, 2000);
+    // 2. 人員選擇
+    function addPerson() {
+        const name = document.getElementById('personNameInput').value.trim();
+        if (!name) return;
+        const list = document.getElementById('personList');
+        const tag = document.createElement('div');
+        tag.className = 'person-tag';
+        tag.innerText = name;
+        tag.onclick = function() { selectPerson(this); };
+        list.appendChild(tag);
+        document.getElementById('personNameInput').value = "";
+    }
 
-    // 初始執行
-    updateStatus();
+    function selectPerson(el) {
+        document.querySelectorAll('.person-tag').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        selectedPerson = el.innerText;
+        document.getElementById('currentUserDisplay').innerText = selectedPerson;
+    }
+
+    // 3. 送出訂單並計算小計
+    function sendOrder() {
+        const checkedItems = document.querySelectorAll('.menu-cb:checked');
+        if (checkedItems.length === 0) return alert("請至少選擇一項餐點");
+
+        let currentItems = [];
+        let currentTotal = 0;
+
+        checkedItems.forEach(cb => {
+            currentItems.push(cb.getAttribute('data-name'));
+            currentTotal += parseInt(cb.getAttribute('data-price'));
+            cb.checked = false; // 送出後清空勾選
+        });
+
+        // 更新帳單紀錄 (如果同一個人點兩次，會累加)
+        if (!allOrders[selectedPerson]) {
+            allOrders[selectedPerson] = { items: [], total: 0 };
+        }
+        allOrders[selectedPerson].items.push(...currentItems);
+        allOrders[selectedPerson].total += currentTotal;
+
+        updateSummaryTable();
+        logSystem(`[訂單已接收] ${selectedPerson} 點了 ${currentItems.length} 項，金額 $${currentTotal}`);
+    }
+
+    // 4. 更新小計表格
+    function updateSummaryTable() {
+        const body = document.getElementById('summaryBody');
+        const grandTotalEl = document.getElementById('grandTotal');
+        body.innerHTML = "";
+        let grandTotal = 0;
+
+        for (const [name, data] of Object.entries(allOrders)) {
+            const row = `
+                <tr>
+                    <td><b>${name}</b></td>
+                    <td style="font-size:0.85rem">${data.items.join('、')}</td>
+                    <td style="color:#d32f2f">NT.${data.total}</td>
+                </tr>
+            `;
+            body.innerHTML += row;
+            grandTotal += data.total;
+        }
+        grandTotalEl.innerText = `NT.${grandTotal}`;
+    }
+
+    // 5. 自動更新日誌 (模擬後端)
+    function logSystem(msg) {
+        const log = document.getElementById('statusLog');
+        const time = new Date().toLocaleTimeString();
+        log.innerHTML = `<div class="status-line">>> [${time}] ${msg}</div>` + log.innerHTML;
+        document.getElementById('updateTime').innerText = time;
+    }
+
+    setInterval(() => {
+        const randomMsgs = ["連線穩定", "廚房接收中", "雲端同步完成", "自動備份中"];
+        logSystem(randomMsgs[Math.floor(Math.random()*randomMsgs.length)]);
+    }, 2000);
+
+    initMenu();
 </script>
 
 </body>
