@@ -3,203 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>島之後 - 228 快速點餐</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>在島之後 - 即時點餐系統</title>
     <style>
-        .active-member { background-color: #06b6d4 !important; border-color: #22d3ee !important; box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
-        .menu-card:active { transform: scale(0.95); }
-        body { font-size: 1.2rem; }
-        .category-header { border-left: 5px solid #22d3ee; padding-left: 10px; margin-bottom: 15px; }
+        :root {
+            --bg-color: #0b2d35; /* 圖片中的深青色 */
+            --accent-color: #ffffff;
+            --highlight-color: #4db6ac;
+            --border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .menu-container {
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #0b2d35 0%, #15454f 100%);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            margin: 20px 0 15px 0;
+            text-transform: uppercase;
+        }
+
+        /* 菜單品項 */
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .item-info {
+            flex-grow: 1;
+        }
+
+        .item-name {
+            font-weight: bold;
+            display: block;
+        }
+
+        .item-sub {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .price {
+            margin-right: 15px;
+            font-family: monospace;
+        }
+
+        /* 輸入與按鈕 */
+        .order-action {
+            margin-top: 30px;
+            border-top: 2px dashed var(--border-color);
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        #submitBtn {
+            background-color: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 10px 40px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        #submitBtn:hover {
+            background-color: white;
+            color: var(--bg-color);
+        }
+
+        #submitBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 自動更新區塊 */
+        .status-panel {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--highlight-color);
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+        }
+
+        .order-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .badge-update {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
+<body>
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <header class="text-center mb-10">
-            <h1 class="text-5xl font-black text-cyan-400 mb-3 tracking-tighter">島之後</h1>
-            <p class="text-xl text-slate-400 font-bold">228 台南空山鹿耳 · 專屬快速點餐</p>
-        </header>
-
-        <section class="mb-12 bg-slate-800/40 p-6 rounded-3xl border border-slate-700">
-            <h2 class="text-2xl font-bold text-cyan-300 mb-6 text-center">誰在點餐？</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="memberButtons">
-                </div>
-        </section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            <div class="lg:col-span-2 space-y-12" id="menuArea">
-                <h2 class="text-2xl font-bold text-cyan-300 mb-4">點擊菜名即可點餐</h2>
-            </div>
-
-            <div class="lg:col-span-1">
-                <div class="sticky top-6 bg-slate-800 rounded-3xl p-6 border-2 border-cyan-500 shadow-2xl">
-                    <h2 class="text-2xl font-black text-cyan-400 mb-6 flex justify-between items-center">
-                        <span>📊 目前匯整</span>
-                        <span class="text-xs font-normal text-slate-500 animate-pulse">每 10 秒同步</span>
-                    </h2>
-                    <div id="summaryList" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                        <p class="text-slate-600 text-center py-10 italic">載入資料中...</p>
-                    </div>
-                    <div class="mt-6 pt-6 border-t border-slate-700 text-right">
-                        <p class="text-slate-400 text-lg">總計金額</p>
-                        <p class="text-4xl font-black text-green-400">NT$ <span id="totalDisplay">0</span></p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="menu-container">
+    <div class="header">
+        <h1>在島之後</h1>
+        <div style="font-size: 0.7rem; opacity: 0.6;">AFTER ISLAND</div>
     </div>
 
-    <script>
-        // --- 請確認此處網址正確 ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxCXGkj0OunqXC9byaTqtlAaK8ISrjIHAZQG0ns4zCS1rrR7pE5jZB7_AFk-Cu_xjZw/exec"; 
+    <div class="section-title">Appetizer</div>
+    
+    <div class="item">
+        <div class="item-info">
+            <span class="item-name">[烤綜合時蔬]</span>
+            <span class="item-sub">Grilled Seasonal Vegetables</span>
+        </div>
+        <span class="price">NT.180</span>
+        <input type="checkbox" class="menu-item" value="烤綜合時蔬">
+    </div>
+
+    <div class="item">
+        <div class="item-info">
+            <span class="item-name">[幸福炸雞]</span>
+            <span class="item-sub">House Fried Chicken</span>
+        </div>
+        <span class="price">NT.180</span>
+        <input type="checkbox" class="menu-item" value="幸福炸雞">
+    </div>
+
+    <div class="section-title">Main Course</div>
+
+    <div class="item">
+        <div class="item-info">
+            <span class="item-name">看著玉米田的牛小排</span>
+            <span class="item-sub">Beef short rib with truffle sauce</span>
+        </div>
+        <span class="price">NT.580</span>
+        <input type="checkbox" class="menu-item" value="牛小排">
+    </div>
+
+    <div class="order-action">
+        <button id="submitBtn">確定送出</button>
+    </div>
+</div>
+
+<div class="status-panel">
+    <div class="status-header">
+        <span>● 即時出餐狀態 (模擬自動更新)</span>
+        <span id="timer" class="badge-update">更新中...</span>
+    </div>
+    <div id="live-orders">
+        </div>
+</div>
+
+<script>
+    const submitBtn = document.getElementById('submitBtn');
+    const checkboxes = document.querySelectorAll('.menu-item');
+    const liveOrdersDiv = document.getElementById('live-orders');
+    const timerText = document.getElementById('timer');
+
+    // 1. 【確定送出】功能
+    submitBtn.addEventListener('click', async () => {
+        const selected = Array.from(checkboxes)
+            .filter(i => i.checked)
+            .map(i => i.value);
+
+        if (selected.length === 0) {
+            alert("請至少選擇一項餐點");
+            return;
+        }
+
+        // 模擬送出
+        submitBtn.disabled = true;
+        submitBtn.innerText = "傳送至廚房...";
+
+        await new Promise(res => setTimeout(res, 1000));
+
+        alert("訂單已送出！點餐內容：" + selected.join(", "));
         
-        // 更新後的成員名單
-        const members = ["破壞", "萬萬", "阿正", "Morris", "Luka", "Neo", "鐵", "ㄎ"];
+        // 清空選擇並恢復按鈕
+        checkboxes.forEach(i => i.checked = false);
+        submitBtn.disabled = false;
+        submitBtn.innerText = "確定送出";
+        
+        // 立即觸發一次更新，讓使用者看到反饋
+        updateStatus();
+    });
 
-        const menuData = {
-            "Pasta 義大利麵": [
-                { name: "蒜梨醬豬五花義大利麵", price: 260 },
-                { name: "海瓜子蛤蠣薄荷清炒麵", price: 280 },
-                { name: "野菇培根白醬義大利麵", price: 250 },
-                { name: "經典肉醬義大利麵", price: 240 }
-            ],
-            "Main Course 主餐": [
-                { name: "看著玉米田的牛小排", price: 580 },
-                { name: "慢煮豬梅花排佐黑糖奶油", price: 380 },
-                { name: "爐烤八兩雞腿排", price: 300 },
-                { name: "油封鴨腿佐小農作物", price: 380 }
-            ],
-            "Risotto 燉飯": [
-                { name: "干貝小卷章魚汁海鮮燉飯", price: 350 },
-                { name: "剝皮辣椒雞燉飯", price: 280 },
-                { name: "獵人燉雞燉飯", price: 300 },
-                { name: "義式松露野菇玄米茶燉飯", price: 320 }
-            ],
-            "Others 其他": [
-                { name: "沖繩塔可飯", price: 260 },
-                { name: "今日例湯", price: 50 },
-                { name: "西班牙生火腿水果沙拉(小)", price: 200 },
-                { name: "幸福炸雞", price: 180 }
-            ]
-        };
+    // 2. 【2秒自動更新】功能
+    function updateStatus() {
+        const now = new Date();
+        const timeStr = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+        
+        // 模擬從資料庫抓取的隨機數據
+        const mockStatuses = ["製作中", "即時排單", "已出餐"];
+        const randomStatus = mockStatuses[Math.floor(Math.random() * mockStatuses.length)];
 
-        let selectedUser = "";
-        let localOrders = [];
+        timerText.innerText = "上次更新: " + timeStr;
+        
+        // 更新內容區域而不影響使用者操作輸入框
+        liveOrdersDiv.innerHTML = `
+            <div class="order-item">
+                <small>[系統通知] 當前排隊桌號：${Math.floor(Math.random()*10 + 1)} | 狀態：${randomStatus}</small>
+            </div>
+        `;
+        console.log("資料已自動更新");
+    }
 
-        function init() {
-            // 成員按鈕生成
-            const mDiv = document.getElementById('memberButtons');
-            members.forEach(m => {
-                const btn = document.createElement('button');
-                btn.className = "px-4 py-4 bg-slate-800 border-2 border-slate-700 rounded-2xl font-black text-xl hover:border-cyan-400 transition";
-                btn.innerText = m;
-                btn.onclick = () => {
-                    document.querySelectorAll('#memberButtons button').forEach(b => b.classList.remove('active-member'));
-                    btn.classList.add('active-member');
-                    selectedUser = m;
-                };
-                mDiv.appendChild(btn);
-            });
+    // 設定定時器：2000 毫秒
+    setInterval(updateStatus, 2000);
 
-            // 菜單生成
-            const menuDiv = document.getElementById('menuArea');
-            for (const [cat, items] of Object.entries(menuData)) {
-                let html = `<div class="mb-10"><h3 class="category-header text-cyan-200 font-bold text-2xl">${cat}</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-                items.forEach(item => {
-                    html += `<button onclick="quickOrder('${item.name}', ${item.price})" class="menu-card bg-slate-800 p-5 rounded-2xl border border-slate-700 text-left hover:border-cyan-500 transition group shadow-lg">
-                        <div class="text-2xl font-bold text-white group-hover:text-cyan-400">${item.name}</div>
-                        <div class="text-cyan-600 font-mono font-bold">$${item.price}</div>
-                    </button>`;
-                });
-                html += `</div></div>`;
-                menuDiv.innerHTML += html;
-            }
-            fetchData();
-        }
+    // 初始執行
+    updateStatus();
+</script>
 
-        // 點擊即點餐，預設數量 +1
-        async function quickOrder(itemName, price) {
-            if (!selectedUser) return alert("⚠️ 請先選取您的名字！");
-            let order = localOrders.find(o => o.name === selectedUser && o.item === itemName);
-            const newQty = order ? parseInt(order.qty) + 1 : 1;
-            updateRemote(selectedUser, itemName, price, newQty);
-        }
-
-        // 修改數量按鈕
-        async function modifyQty(name, itemName, price, delta) {
-            let order = localOrders.find(o => o.name === name && o.item === itemName);
-            if (!order) return;
-            const newQty = Math.max(0, parseInt(order.qty) + delta);
-            updateRemote(name, itemName, price, newQty);
-        }
-
-        // 背景傳送資料至 Google Sheet
-        function updateRemote(name, item, price, qty) {
-            let existing = localOrders.find(o => o.name === name && o.item === item);
-            if (existing) {
-                if (qty === 0) localOrders = localOrders.filter(o => o !== existing);
-                else existing.qty = qty;
-            } else if (qty > 0) {
-                localOrders.push({ name, item, price, qty });
-            }
-            renderSummary();
-
-            fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ name, item, price, qty })
-            }).catch(e => console.error("Sync Error"));
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(GAS_URL);
-                localOrders = await response.json();
-                renderSummary();
-            } catch (e) { console.log("Fetch Error"); }
-        }
-
-        function renderSummary() {
-            const listDiv = document.getElementById('summaryList');
-            const totalSpan = document.getElementById('totalDisplay');
-            if (localOrders.length === 0) {
-                listDiv.innerHTML = '<p class="text-slate-600 text-center py-10 italic text-lg">目前尚無人點餐</p>';
-                totalSpan.innerText = "0";
-                return;
-            }
-            let html = "";
-            let grandTotal = 0;
-            const grouped = localOrders.reduce((acc, o) => {
-                acc[o.name] = acc[o.name] || [];
-                acc[o.name].push(o);
-                return acc;
-            }, {});
-
-            for (const name in grouped) {
-                html += `<div class="bg-slate-700/50 p-5 rounded-2xl border border-slate-600 mb-5 shadow-inner">
-                    <div class="text-cyan-300 font-black text-2xl border-b border-slate-600 pb-2 mb-4">${name}</div>`;
-                grouped[name].forEach(o => {
-                    const sub = o.price * o.qty;
-                    grandTotal += sub;
-                    html += `<div class="flex justify-between items-center mb-4">
-                        <div class="flex-1 pr-2">
-                            <div class="text-xl text-white font-bold leading-tight">${o.item}</div>
-                        </div>
-                        <div class="flex items-center bg-slate-800 rounded-xl border border-slate-600 overflow-hidden">
-                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, -1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-red-500 hover:bg-slate-700">-</button>
-                            <span class="w-12 text-center font-black text-2xl text-cyan-400">${o.qty}</span>
-                            <button onclick="modifyQty('${name}', '${o.item}', ${o.price}, 1)" class="w-12 h-12 flex items-center justify-center font-black text-2xl text-green-500 hover:bg-slate-700">+</button>
-                        </div>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-            listDiv.innerHTML = html;
-            totalSpan.innerText = grandTotal.toLocaleString();
-        }
-
-        init();
-        setInterval(fetchData, 10000); // 每 10 秒與 Google Sheet 同步一次
-    </script>
 </body>
 </html>
