@@ -2,238 +2,334 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THAI.26 | 旅遊儀表板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泰國旅遊隨身助手 - 曼谷 & 芭達雅</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f6; padding-bottom: 50px; }
-        .day-card { background: white; border-radius: 12px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .map-btn { display: inline-block; background: #4285F4; color: white; padding: 4px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
-        .expense-section { background: #e8f5e9; padding: 20px; border-radius: 15px; border: 1px solid #c8e6c9; }
-        .sync-tag { font-size: 10px; color: #999; text-align: right; margin-bottom: 5px; }
-        .drag-handle { cursor: grab; color: #ccc; padding-right: 10px; }
-        .payer-common { color: #f59e0b; }
-        .payer-me { color: #6366f1; }
-        .payer-partner { color: #ec4899; }
-        /* 隱藏原生滾輪樣式但保留功能 */
-        input[type="time"] { border: 1px solid #ddd; border-radius: 4px; padding: 2px 5px; }
-    </style>
-</head>
-<body>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-<div class="max-w-md mx-auto p-4">
-    <div class="flex justify-between items-end mb-4">
-        <h2 class="text-2xl font-bold text-slate-800">📍 泰國旅遊儀表板</h2>
-        <div id="sync-status" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">● 雲端同步中</div>
-    </div>
+        // Firebase Config (Provided by environment)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'thailand-trip-2025';
 
-    <div id="itinerary-list">
-        <p class="text-center py-10 text-slate-400">正在讀取雲端行程...</p>
-    </div>
+        // App State
+        window.appData = {
+            itinerary: [],
+            expenses: [],
+            userId: null
+        };
 
-    <div class="expense-section mt-8">
-        <h3 class="text-lg font-bold mb-3 flex items-center gap-2">💰 快速記帳 (共同支出)</h3>
-        <div class="space-y-2">
-            <input type="text" id="ex-item" placeholder="項目名稱 (如：午餐)" class="w-full p-3 border-none rounded-lg shadow-sm">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="number" id="ex-amount" placeholder="金額 (THB)" class="p-3 border-none rounded-lg shadow-sm">
-                <select id="ex-payer" class="p-3 border-none rounded-lg shadow-sm font-bold text-indigo-600 bg-white">
-                    <option value="共同">共同支付</option>
-                    <option value="博懷">博懷付</option>
-                    <option value="阿正">阿正付</option>
-                </select>
-            </div>
-            <button onclick="addExpenseFromForm()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-md active:scale-95 transition-all">新增紀錄</button>
-        </div>
+        // 預設行程 (如果雲端沒資料時使用)
+        const defaultItinerary = [
+            { day: 1, date: "3/19 (週四)", items: [
+                { time: "05:25", title: "搭統聯到機場", loc: "台中統聯", icon: "bus" },
+                { time: "09:25", title: "星宇 JX741 起飛", loc: "桃園機場T2", icon: "plane" },
+                { time: "16:00", title: "入住 Holiday Inn Express", loc: "Holiday Inn Express Pattaya Central", icon: "hotel", note: "1660580945" },
+                { time: "18:27", title: "中天海灘日落", loc: "Jomtien Beach", icon: "map-pin" }
+            ]},
+            { day: 2, date: "3/20 (週五)", items: [
+                { time: "09:00", title: "The Lunar Beach House", loc: "The Lunar Beach House", icon: "coffee" },
+                { time: "19:00", title: "芭達雅步行街", loc: "Walking Street Pattaya", icon: "beer" }
+            ]},
+            { day: 3, date: "3/21 (週六)", items: [
+                { time: "11:00", title: "包車前往曼谷", loc: "Sindhorn Midtown Hotel", icon: "car" },
+                { time: "14:00", title: "入住 Sindhorn Midtown", loc: "Sindhorn Midtown Hotel Bangkok", icon: "hotel", note: "1668994448" },
+                { time: "17:00", title: "高空觀景臺", loc: "Akara Sky Hanuman", icon: "eye" }
+            ]},
+            { day: 4, date: "3/22 (週日)", items: [
+                { time: "10:00", title: "鄭王廟泰服體驗", loc: "Wat Arun", icon: "camera" },
+                { time: "17:00", title: "ICONSIAM", loc: "ICONSIAM", icon: "shopping-bag" }
+            ]},
+            { day: 5, date: "3/23 (週一)", items: [
+                { time: "12:00", title: "龍蝦麵 綠洲", loc: "Oasis Luxury Noodles", icon: "utensils" },
+                { time: "19:00", title: "朱拉隆功夜市", loc: "Chulalongkorn Night Market", icon: "utensils-crossed" }
+            ]},
+            { day: 6, date: "3/24 (週二)", items: [
+                { time: "11:00", title: "退房與前往機場", loc: "Suvarnabhumi Airport", icon: "bus" },
+                { time: "13:45", title: "星宇 JX742 返台", loc: "Suvarnabhumi Airport", icon: "plane" }
+            ]}
+        ];
 
-        <table class="w-full mt-6 text-sm">
-            <thead class="text-slate-500 border-b">
-                <tr><th class="py-2 text-left">項目</th><th class="py-2 text-center">付款</th><th class="py-2 text-right">金額</th></tr>
-            </thead>
-            <tbody id="expense-tbody">
-                </tbody>
-        </table>
-        
-        <div class="mt-4 pt-4 border-t border-green-200 space-y-1">
-            <div class="flex justify-between text-sm"><span>博懷小計:</span><span id="sum-b">0</span></div>
-            <div class="flex justify-between text-sm"><span>阿正小計:</span><span id="sum-a">0</span></div>
-            <div class="flex justify-between font-bold text-indigo-600"><span>總計 (含共同):</span><span id="sum-total">0</span></div>
-        </div>
-    </div>
-</div>
-
-<div id="modal" class="fixed inset-0 bg-black/50 hidden z-[200] flex items-center justify-center p-6">
-    <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-        <h3 class="font-bold text-lg mb-4">修改行程</h3>
-        <input type="hidden" id="edit-id">
-        <input type="text" id="edit-title" class="w-full p-3 border rounded-lg mb-3" placeholder="行程名稱">
-        <div class="grid grid-cols-2 gap-2 mb-3">
-            <input type="time" id="edit-time" class="p-3 border rounded-lg">
-            <select id="edit-payer" class="p-3 border rounded-lg">
-                <option value="共同">共同</option><option value="博懷">博懷</option><option value="阿正">阿正</option>
-            </select>
-        </div>
-        <input type="number" id="edit-cost" class="w-full p-3 border rounded-lg mb-3" placeholder="金額">
-        <div class="flex gap-2">
-            <button onclick="closeModal()" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">取消</button>
-            <button onclick="saveEdit()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">儲存</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyTRAUKi7Uo8Mn0ih_q9qx4LBHM_6nwGIb6MLK1n1z46p4WcP9sMpLeuGS3utgMNQ19ZA/exec";
-    let tripData = [];
-
-    // 初始化讀取
-    async function init() {
-        document.getElementById('sync-status').innerText = "● 雲端讀取中...";
-        try {
-            const res = await fetch(`${GAS_URL}?t=${Date.now()}`);
-            tripData = await res.json();
-            renderAll();
-        } catch (e) {
-            console.error(e);
-        } finally {
-            document.getElementById('sync-status').innerText = "● 雲端已同步";
-        }
-    }
-
-    function renderAll() {
-        renderItinerary();
-        renderExpenses();
-    }
-
-    // 渲染行程 (按天數分組卡片)
-    function renderItinerary() {
-        const list = document.getElementById('itinerary-list');
-        list.innerHTML = '';
-        
-        // 取得所有天數並排序
-        const days = [...new Set(tripData.map(item => parseInt(item.Day)))].sort((a,b) => a-b);
-
-        days.forEach(day => {
-            const dayCard = document.createElement('div');
-            dayCard.className = "day-card";
-            dayCard.innerHTML = `<h3 class="font-black text-indigo-600 border-b pb-2 mb-3">Day ${day}</h3>`;
-            
-            const ul = document.createElement('ul');
-            ul.className = "space-y-4";
-            ul.id = `day-list-${day}`;
-
-            const items = tripData.filter(item => parseInt(item.Day) === day);
-            items.forEach(item => {
-                const li = document.createElement('li');
-                li.className = "flex items-center justify-between group";
-                li.dataset.id = item.ID;
-                
-                const timeStr = item.Time ? (String(item.Time).includes('T') ? item.Time.split('T')[1].substring(0, 5) : String(item.Time).substring(0, 5)) : '--:--';
-                const payerClass = item.Payer === '共同' ? 'payer-common' : (item.Payer === '博懷' ? 'payer-me' : 'payer-partner');
-
-                li.innerHTML = `
-                    <div class="flex items-center flex-1" onclick='openModal(${JSON.stringify(item)})'>
-                        <span class="drag-handle">☰</span>
-                        <div>
-                            <span class="text-[10px] font-bold text-slate-300 mr-2">${timeStr}</span>
-                            <span class="font-bold text-slate-700">${item.Title}</span>
-                            <div class="text-[9px] font-bold ${payerClass}">${item.Payer || ''} ${item.Cost ? '฿'+item.Cost : ''}</div>
-                        </div>
-                    </div>
-                    <a class="map-btn" href="${item.URL || 'https://www.google.com/maps/search/' + encodeURIComponent(item.Title + ' Thailand')}" target="_blank">導航</a>
-                `;
-                ul.appendChild(li);
-            });
-            dayCard.appendChild(ul);
-            list.appendChild(dayCard);
-
-            // 啟用每一天的拖拽排序
-            new Sortable(ul, {
-                handle: '.drag-handle',
-                animation: 150,
-                onEnd: async () => {
-                    const sortedIds = Array.from(ul.children).map(el => el.dataset.id);
-                    syncAction({ action: "reorder", ids: sortedIds, day: day });
+        // 初始化 Auth 與 Firestore
+        async function init() {
+            await signInAnonymously(auth);
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.appData.userId = user.uid;
+                    document.getElementById('user-id').innerText = `連線中: ${user.uid.substring(0,8)}`;
+                    syncData();
                 }
             });
-        });
-    }
+        }
 
-    // 渲染記帳清單與統計
-    function renderExpenses() {
-        const tbody = document.getElementById('expense-tbody');
-        tbody.innerHTML = '';
-        let total = 0, b = 0, a = 0, common = 0;
+        // 資料同步
+        function syncData() {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'travel_data');
+            
+            // 監聽雲端更新
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.appData.itinerary = data.itinerary || defaultItinerary;
+                    window.appData.expenses = data.expenses || [];
+                } else {
+                    // 如果雲端沒資料，上傳預設
+                    setDoc(docRef, { itinerary: defaultItinerary, expenses: [] });
+                }
+                renderAll();
+            }, (err) => console.error("Firestore Error:", err));
+        }
 
-        // 篩選有金額的項目
-        const expenses = tripData.filter(item => item.Cost && parseFloat(item.Cost) > 0);
-
-        expenses.forEach(ex => {
-            const cost = parseFloat(ex.Cost);
-            const payerClass = ex.Payer === '共同' ? 'payer-common' : (ex.Payer === '博懷' ? 'payer-me' : 'payer-partner');
-            total += cost;
-            if (ex.Payer === '博懷') b += cost;
-            else if (ex.Payer === '阿正') a += cost;
-            else common += cost;
-
-            tbody.innerHTML += `
-                <tr class="border-b border-green-100">
-                    <td class="py-2 font-medium">${ex.Title}</td>
-                    <td class="py-2 text-center text-[10px] font-bold ${payerClass}">${ex.Payer}</td>
-                    <td class="py-2 text-right font-black italic">฿${cost.toLocaleString()}</td>
-                </tr>
-            `;
-        });
-
-        document.getElementById('sum-b').innerText = `฿${b.toLocaleString()}`;
-        document.getElementById('sum-a').innerText = `฿${a.toLocaleString()}`;
-        document.getElementById('sum-total').innerText = `฿${total.toLocaleString()} (含共同 ฿${common.toLocaleString()})`;
-    }
-
-    // 新增記帳 (快捷鍵)
-    async function addExpenseFromForm() {
-        const title = document.getElementById('ex-item').value;
-        const cost = document.getElementById('ex-amount').value;
-        const payer = document.getElementById('ex-payer').value;
-        if (!title || !cost) return alert("請填寫項目與金額");
-
-        const payload = { action: "add", day: 1, title, cost, payer, id: Date.now() };
-        await syncAction(payload);
-        document.getElementById('ex-item').value = '';
-        document.getElementById('ex-amount').value = '';
-    }
-
-    // Modal 控制
-    function openModal(item) {
-        document.getElementById('edit-id').value = item.ID;
-        document.getElementById('edit-title').value = item.Title;
-        document.getElementById('edit-time').value = item.Time ? String(item.Time).substring(0, 5) : "";
-        document.getElementById('edit-cost').value = item.Cost || "";
-        document.getElementById('edit-payer').value = item.Payer || "共同";
-        document.getElementById('modal').classList.remove('hidden');
-    }
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-    async function saveEdit() {
-        const payload = {
-            action: "update",
-            id: document.getElementById('edit-id').value,
-            title: document.getElementById('edit-title').value,
-            time: document.getElementById('edit-time').value,
-            cost: document.getElementById('edit-cost').value,
-            payer: document.getElementById('edit-payer').value
+        // 更新資料到雲端
+        window.saveToCloud = async () => {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'travel_data');
+            await updateDoc(docRef, {
+                itinerary: window.appData.itinerary,
+                expenses: window.appData.expenses
+            });
         };
-        closeModal();
-        await syncAction(payload);
-    }
 
-    // 核心同步函式
-    async function syncAction(payload) {
-        document.getElementById('sync-status').innerText = "● 雲端同步中...";
-        await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
-        await init(); // 重新讀取資料
-    }
+        window.onload = init;
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-active { color: #2563eb; border-bottom: 2px solid #2563eb; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-24">
 
-    window.onload = init;
-</script>
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 shadow-lg rounded-b-[2rem]">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold italic">THAI TRIP 2025</h1>
+                <p class="text-blue-100 text-sm opacity-80">曼谷 & 芭達雅 雲端助手</p>
+            </div>
+            <div id="user-id" class="text-[10px] bg-blue-700 px-2 py-1 rounded">連線中...</div>
+        </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex bg-white mx-4 -mt-4 rounded-xl shadow-md sticky top-4 z-50">
+        <button onclick="switchTab('itinerary')" id="tab-itinerary" class="flex-1 py-4 text-sm font-bold tab-active">行程計畫</button>
+        <button onclick="switchTab('expenses')" id="tab-expenses" class="flex-1 py-4 text-sm font-bold text-slate-400">隨手記帳</button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-4 text-sm font-bold text-slate-400">管理</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="p-4 mt-4">
+        
+        <!-- 行程計畫分頁 -->
+        <section id="section-itinerary">
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-4" id="day-selector">
+                <!-- Days will be rendered here -->
+            </div>
+            <div id="itinerary-list" class="space-y-3">
+                <!-- Items will be rendered here -->
+            </div>
+        </section>
+
+        <!-- 記帳分頁 -->
+        <section id="section-expenses" class="hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm mb-6 text-center border border-blue-100">
+                <p class="text-slate-400 text-xs">目前累計支出</p>
+                <div class="text-4xl font-black text-slate-800 my-1">
+                    <span class="text-blue-600 text-xl mr-1">฿</span><span id="total-amount">0</span>
+                </div>
+                <p class="text-[10px] text-slate-300">資料已同步至雲端</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
+                <div class="flex gap-2">
+                    <input id="exp-name" type="text" placeholder="項目" class="flex-1 bg-slate-50 p-3 rounded-lg text-sm outline-none">
+                    <input id="exp-price" type="number" placeholder="金額" class="w-24 bg-slate-50 p-3 rounded-lg text-sm outline-none">
+                    <button onclick="addExpense()" class="bg-blue-600 text-white px-4 rounded-lg"><i data-lucide="plus"></i></button>
+                </div>
+            </div>
+
+            <div id="expense-list" class="space-y-2">
+                <!-- Expenses will be rendered here -->
+            </div>
+        </section>
+
+        <!-- 管理分頁 -->
+        <section id="section-settings" class="hidden">
+            <div class="bg-white p-6 rounded-2xl space-y-4 shadow-sm">
+                <h3 class="font-bold border-b pb-2">管理功能</h3>
+                <button onclick="exportJSON()" class="w-full text-left p-3 bg-slate-50 rounded-lg text-sm flex items-center justify-between">
+                    <span>導出備份資料 (JSON)</span>
+                    <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+                </button>
+                <button onclick="resetToDefault()" class="w-full text-left p-3 bg-red-50 text-red-600 rounded-lg text-sm flex items-center justify-between">
+                    <span>重置為原始行程</span>
+                    <i data-lucide="refresh-cw" class="w-4 h-4 opacity-50"></i>
+                </button>
+            </div>
+            <div class="mt-6 p-4 text-center">
+                <p class="text-xs text-slate-400">這是一個開源的旅遊助手專案</p>
+                <p class="text-xs text-slate-400 mt-1">Powered by GitHub & Firebase</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Map Action -->
+    <div id="map-fab" class="fixed bottom-6 right-6 z-50 transition-transform scale-0">
+        <button onclick="openGoogleMaps()" class="bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center">
+            <i data-lucide="map"></i>
+        </button>
+    </div>
+
+    <script>
+        let currentDay = 1;
+
+        function switchTab(tab) {
+            ['itinerary', 'expenses', 'settings'].forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active', 'text-blue-600');
+                document.getElementById(`tab-${t}`).classList.add('text-slate-400');
+            });
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active', 'text-blue-600');
+            lucide.createIcons();
+        }
+
+        function renderAll() {
+            renderDaySelector();
+            renderItinerary();
+            renderExpenses();
+            lucide.createIcons();
+        }
+
+        function renderDaySelector() {
+            const container = document.getElementById('day-selector');
+            container.innerHTML = window.appData.itinerary.map(day => `
+                <button onclick="setDay(${day.day})" class="px-5 py-2 rounded-full whitespace-nowrap text-sm font-bold border transition-all ${currentDay === day.day ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-500 border-slate-200'}">
+                    Day ${day.day}
+                </button>
+            `).join('');
+        }
+
+        function setDay(day) {
+            currentDay = day;
+            renderAll();
+        }
+
+        function renderItinerary() {
+            const dayData = window.appData.itinerary.find(d => d.day === currentDay);
+            const container = document.getElementById('itinerary-list');
+            if (!dayData) return;
+
+            container.innerHTML = dayData.items.map((item, idx) => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center gap-4">
+                    <div class="min-w-[50px] text-center border-r pr-3">
+                        <p class="text-xs font-bold text-blue-600">${item.time}</p>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-bold text-slate-800">${item.title}</h4>
+                        <p class="text-[10px] text-slate-400 flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-3 h-3"></i> ${item.loc}
+                        </p>
+                        ${item.note ? `<span class="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded">#${item.note}</span>` : ''}
+                    </div>
+                    <button onclick="navTo('${item.loc}')" class="p-3 bg-blue-50 text-blue-600 rounded-full">
+                        <i data-lucide="navigation" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('') + `
+                <button onclick="addItem()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> 新增行程項目
+                </button>
+            `;
+        }
+
+        function renderExpenses() {
+            const list = document.getElementById('expense-list');
+            const total = window.appData.expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+            document.getElementById('total-amount').innerText = total.toLocaleString();
+
+            list.innerHTML = window.appData.expenses.map((exp, idx) => `
+                <div class="bg-white p-3 rounded-xl shadow-sm flex justify-between items-center animate-in fade-in slide-in-from-bottom-2">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">${exp.name}</p>
+                        <p class="text-[10px] text-slate-400">${exp.time}</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-slate-800">฿${exp.amount}</span>
+                        <button onclick="removeExpense(${idx})" class="text-slate-300 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 行為函數
+        window.navTo = (loc) => {
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank');
+        };
+
+        window.addExpense = () => {
+            const name = document.getElementById('exp-name').value;
+            const amount = document.getElementById('exp-price').value;
+            if (!name || !amount) return;
+            
+            window.appData.expenses.unshift({
+                name,
+                amount,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            document.getElementById('exp-name').value = '';
+            document.getElementById('exp-price').value = '';
+            renderExpenses();
+            window.saveToCloud();
+        };
+
+        window.removeExpense = (idx) => {
+            window.appData.expenses.splice(idx, 1);
+            renderExpenses();
+            window.saveToCloud();
+            lucide.createIcons();
+        };
+
+        window.addItem = () => {
+            const title = prompt("行程名稱?");
+            const time = prompt("時間? (例如 10:00)");
+            const loc = prompt("地點? (導航用)");
+            if (title && time && loc) {
+                const dayIndex = window.appData.itinerary.findIndex(d => d.day === currentDay);
+                window.appData.itinerary[dayIndex].items.push({title, time, loc, icon: 'map-pin'});
+                renderItinerary();
+                window.saveToCloud();
+                lucide.createIcons();
+            }
+        };
+
+        window.resetToDefault = () => {
+            if(confirm("確定要重置所有行程嗎？這將刪除您所有的自定義改動。")) {
+                window.appData.itinerary = JSON.parse(JSON.stringify(defaultItinerary));
+                renderAll();
+                window.saveToCloud();
+            }
+        };
+
+        window.exportJSON = () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.appData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "trip_backup.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        };
+
+    </script>
 </body>
 </html>
