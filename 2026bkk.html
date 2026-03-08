@@ -25,8 +25,8 @@
 
 <div id="realtime-header" class="fixed top-0 w-full z-[110] bg-indigo-900 text-white p-3 shadow-lg hidden">
     <div class="flex justify-between items-center text-[10px] font-bold tracking-widest px-2">
-        <span id="flight-live-status">✈️ JX741：查詢中...</span>
-        <span id="hsr-live-status">🚄 報到櫃檯：待更新</span>
+        <span id="flight-live-status">✈️ 航班：查詢中...</span>
+        <span id="hsr-live-status">🚄 狀態：待更新</span>
     </div>
 </div>
 
@@ -47,18 +47,18 @@
     </div>
     
     <div id="day-nav" class="flex gap-3 px-5 pb-4 overflow-x-auto no-scrollbar pt-1">
-        <button onclick="setDay(1)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-1">D1 3/19</button>
-        <button onclick="setDay(2)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-2">D2 3/20</button>
-        <button onclick="setDay(3)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-3">D3 3/21</button>
-        <button onclick="setDay(4)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-4">D4 3/22</button>
-        <button onclick="setDay(5)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-5">D5 3/23</button>
-        <button onclick="setDay(6)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-6">D6 3/24</button>
+        <button onclick="setDay(1)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-1">第一天 3/19</button>
+        <button onclick="setDay(2)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-2">第二天 3/20</button>
+        <button onclick="setDay(3)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-3">第三天 3/21</button>
+        <button onclick="setDay(4)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-4">第四天 3/22</button>
+        <button onclick="setDay(5)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-5">第五天 3/23</button>
+        <button onclick="setDay(6)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 transition-all" id="tab-6">第六天 3/24</button>
     </div>
 </nav>
 
 <main id="view-list" class="pt-44 p-5 space-y-4 pb-32">
     <div id="transport-suggestion" class="hidden bg-white p-6 rounded-[2rem] shadow-sm border border-indigo-50 mb-6">
-        <h3 id="suggestion-title" class="text-xs font-black text-indigo-400 mb-3 uppercase tracking-widest">即時資訊建議</h3>
+        <h3 id="suggestion-title" class="text-xs font-black text-indigo-400 mb-3 uppercase tracking-widest">即時行程建議</h3>
         <div class="space-y-3" id="suggestion-box"></div>
     </div>
     <div id="card-container" class="space-y-4"></div>
@@ -81,25 +81,25 @@
     <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-8"></div>
     <div class="flex justify-between items-center mb-6">
         <h3 id="modal-title" class="text-xl font-bold">編輯行程</h3>
-        <button onclick="deleteData()" id="btn-delete" class="text-red-500 text-sm font-bold">刪除</button>
+        <button onclick="deleteData()" id="btn-delete" class="text-red-500 text-sm font-bold">刪除項目</button>
     </div>
     <div class="space-y-5">
-        <input type="text" id="m-title" placeholder="項目名稱" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold">
+        <input type="text" id="m-title" placeholder="行程名稱" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold">
         <div class="grid grid-cols-2 gap-4">
-            <input type="text" id="m-time" placeholder="時間 (HH:mm)" class="bg-slate-50 p-4 rounded-2xl outline-none">
+            <input type="text" id="m-time" placeholder="時間 (小時:分鐘)" class="bg-slate-50 p-4 rounded-2xl outline-none">
             <select id="m-type" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold text-indigo-600">
                 <option value="spot">景點</option><option value="food">美食</option><option value="transport">交通</option><option value="hotel">飯店</option><option value="flight">航班</option>
             </select>
         </div>
         <div class="grid grid-cols-2 gap-4">
-            <input type="number" id="m-cost" placeholder="金額 (THB)" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold text-lg">
+            <input type="number" id="m-cost" placeholder="金額 (泰銖 THB)" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold text-lg">
             <select id="m-payer" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold italic">
                 <option value="博懷">博懷</option><option value="阿正">阿正</option>
             </select>
         </div>
-        <input type="text" id="m-url" placeholder="地圖或網頁網址" class="w-full bg-slate-50 p-4 rounded-2xl outline-none text-blue-500 text-sm">
-        <textarea id="m-note" placeholder="備註內容" class="w-full bg-slate-50 p-4 rounded-2xl outline-none h-24 text-sm"></textarea>
-        <button onclick="saveData()" class="w-full bg-indigo-600 text-white py-5 rounded-3xl font-bold active:scale-95 transition-all">同步至雲端</button>
+        <input type="text" id="m-url" placeholder="Google 地圖或網頁網址" class="w-full bg-slate-50 p-4 rounded-2xl outline-none text-blue-500 text-sm">
+        <textarea id="m-note" placeholder="備註內容（如訂單編號、餐點建議...）" class="w-full bg-slate-50 p-4 rounded-2xl outline-none h-24 text-sm"></textarea>
+        <button onclick="saveData()" class="w-full bg-indigo-600 text-white py-5 rounded-3xl font-bold active:scale-95 transition-all">同步至雲端試算表</button>
     </div>
 </div>
 
@@ -111,6 +111,14 @@
     let currentDay = 1;
     let currentEditId = null;
     let fontSize = 16;
+
+    const typeMapping = {
+        'spot': '景點',
+        'food': '美食',
+        'transport': '交通',
+        'hotel': '飯店',
+        'flight': '航班'
+    };
 
     function adjustFont(d) {
         fontSize += d;
@@ -128,7 +136,6 @@
         } catch (e) { console.error("資料加載失敗", e); }
     }
 
-    // 核心功能：即時資訊與佈局調整
     function updateRealtimeInfo() {
         const header = document.getElementById('realtime-header');
         const suggestion = document.getElementById('transport-suggestion');
@@ -136,7 +143,6 @@
         const viewList = document.getElementById('view-list');
         const viewStats = document.getElementById('view-stats');
         
-        // 重設佈局
         header.classList.add('hidden');
         suggestion.classList.add('hidden');
         mainNav.style.top = '0px';
@@ -148,7 +154,7 @@
             mainNav.style.top = '40px';
             viewList.style.paddingTop = '12rem';
             document.getElementById('flight-live-status').innerHTML = `✈️ JX741 (09:25): 準點 / 登機門: 尚未公佈`;
-            document.getElementById('hsr-live-status').innerText = `🕒 櫃檯: T2 - 6號 (07:25 前報到)`;
+            document.getElementById('hsr-live-status').innerText = `🕒 報到：T2 - 6號櫃檯 (07:25前)`;
         } else if (currentDay === 6) {
             header.classList.remove('hidden');
             suggestion.classList.remove('hidden');
@@ -157,16 +163,16 @@
             viewStats.style.paddingTop = '12rem';
             
             document.getElementById('flight-live-status').innerHTML = `✈️ JX742 (13:45): 準點 / 行李轉盤: 待更新`;
-            document.getElementById('hsr-live-status').innerText = `🚄 下一班回台中: 21:10`;
+            document.getElementById('hsr-live-status').innerText = `🚄 回台中高鐵: 21:10`;
             
-            document.getElementById('suggestion-title').innerText = "3/24 返台接駁建議";
+            document.getElementById('suggestion-title').innerText = "3/24 返台接駁資訊";
             document.getElementById('suggestion-box').innerHTML = `
                 <div class="flex justify-between items-center border-b border-slate-50 pb-2">
-                    <span class="text-xs font-bold text-slate-700">行李轉盤 (預計)</span>
+                    <span class="text-xs font-bold text-slate-700">預計行李轉盤</span>
                     <span class="text-xs text-indigo-500 font-black italic">T2 - 6號轉盤</span>
                 </div>
                 <div class="flex justify-between items-center pt-2">
-                    <span class="text-xs font-bold text-slate-700">高鐵推薦車次 (桃園 → 台中)</span>
+                    <span class="text-xs font-bold text-slate-700">高鐵建議車次 (桃園 → 台中)</span>
                     <span class="text-xs text-indigo-500 font-black">21:10 (853) / 21:21 (1257)</span>
                 </div>
             `;
@@ -188,7 +194,7 @@
         const filtered = allData.filter(d => d.Day == currentDay);
 
         if (filtered.length === 0) {
-            container.innerHTML = `<div class="text-center py-20 text-slate-300 font-bold italic">No Plans Today.</div>`;
+            container.innerHTML = `<div class="text-center py-20 text-slate-300 font-bold italic">今日尚無行程安排</div>`;
             return;
         }
 
@@ -198,11 +204,12 @@
             card.onclick = () => openEditModal(item);
             
             const timeStr = item.Time ? (String(item.Time).includes('T') ? item.Time.split('T')[1].substring(0, 5) : String(item.Time).substring(0, 5)) : '--:--';
+            const typeLabel = typeMapping[item.Type] || '景點';
             
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-3">
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold tag-${item.Type || 'spot'} uppercase tracking-widest">${item.Type || 'spot'}</span>
-                    ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-indigo-600 font-black text-[10px] italic">GO MAP</button>` : ''}
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold tag-${item.Type || 'spot'} uppercase tracking-widest">${typeLabel}</span>
+                    ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-indigo-600 font-black text-[10px] italic">查看地圖</button>` : ''}
                 </div>
                 <div class="flex items-end justify-between">
                     <div class="flex-1 pr-4">
@@ -244,20 +251,20 @@
             total += c;
             if (d.Payer === '博懷') b += c;
             if (d.Payer === '阿正') a += c;
-            const type = d.Type || 'spot';
-            catMap[type] = (catMap[type] || 0) + c;
+            const typeLabel = typeMapping[d.Type] || '景點';
+            catMap[typeLabel] = (catMap[typeLabel] || 0) + c;
         });
         document.getElementById('grand-total').innerText = `฿${total.toLocaleString()}`;
         document.getElementById('total-bohuai').innerText = `฿${b.toLocaleString()}`;
         document.getElementById('total-azheng').innerText = `฿${a.toLocaleString()}`;
 
         const catContainer = document.getElementById('category-stats');
-        catContainer.innerHTML = '<h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">支出分類</h3>';
+        catContainer.innerHTML = '<h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">支出分類統計</h3>';
         for (const [type, amt] of Object.entries(catMap)) {
             const pct = total > 0 ? (amt/total*100).toFixed(0) : 0;
             catContainer.innerHTML += `
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-bold text-slate-600 uppercase">${type}</span>
+                    <span class="text-sm font-bold text-slate-600">${type}</span>
                     <div class="text-right">
                         <span class="text-sm font-black text-slate-800">฿${amt.toLocaleString()}</span>
                         <span class="text-[10px] text-slate-400 ml-1">${pct}%</span>
@@ -269,7 +276,7 @@
 
     function openEditModal(item) {
         currentEditId = item.ID;
-        document.getElementById('modal-title').innerText = "編輯項目";
+        document.getElementById('modal-title').innerText = "編輯項目資料";
         document.getElementById('m-title').value = item.Title;
         document.getElementById('m-time').value = item.Time ? String(item.Time).substring(0, 5) : "";
         document.getElementById('m-type').value = item.Type || 'spot';
@@ -283,7 +290,7 @@
 
     function openAddModal() { 
         currentEditId = null; 
-        document.getElementById('modal-title').innerText = "新增行程";
+        document.getElementById('modal-title').innerText = "新增行程項目";
         document.getElementById('m-title').value = ""; 
         document.getElementById('m-time').value = "";
         document.getElementById('m-cost').value = "";
@@ -313,7 +320,7 @@
         fetchData();
     }
     
-    async function deleteData() { if(!confirm('確認從雲端刪除？')) return; closeModal(); await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) }); fetchData(); }
+    async function deleteData() { if(!confirm('確認要從雲端刪除此項目嗎？')) return; closeModal(); await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) }); fetchData(); }
 
     window.onload = () => {
         const s = localStorage.getItem('prefFS');
