@@ -3,112 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>THAI.26 | 極簡導路</title>
+    <title>THAI.26 | 旅程管家 6.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --primary: #6366f1; --bg: #F8FAFC; }
-        body { font-family: "PingFang TC", sans-serif; background: var(--bg); -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); -webkit-tap-highlight-color: transparent; }
+        
+        /* 導航列與毛玻璃 */
         .glass-header { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
-        .tab-btn.active { background: var(--primary); color: white !important; font-weight: 900; }
-        .plan-card { transition: all 0.2s; border: 1px solid #f1f5f9; }
-        .drag-handle { cursor: grab; color: #cbd5e1; padding: 0 10px; font-size: 16px; }
-        .tag { font-size: 8px; font-weight: 800; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; }
+        .tab-btn.active { background: var(--primary) !important; color: white !important; font-weight: 900; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3); }
+        
+        /* 卡片設計與拖拽 */
+        .plan-card { transition: transform 0.1s, box-shadow 0.2s; border: 1px solid #f1f5f9; }
+        .drag-handle { cursor: grab; color: #cbd5e1; padding: 0 12px; font-size: 18px; display: flex; align-items: center; }
+        .drag-handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.2; background: #e2e8f0; border: 2px dashed var(--primary); }
+
+        /* 標籤顏色 */
+        .tag { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
         .tag-flight { background: #fff7ed; color: #c2410c; }
         .tag-transport { background: #f1f5f9; color: #475569; }
         .tag-spot { background: #f0fdf4; color: #166534; }
         .tag-food { background: #fef2f2; color: #991b1b; }
         .tag-hotel { background: #eef2ff; color: #3730a3; }
-        .cost-trigger { transition: all 0.2s; border: 1px dashed transparent; }
-        .cost-trigger:active { transform: scale(0.9); background: #eef2ff; }
+
+        /* 隱藏捲軸 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="text-slate-900">
 
-<div id="status-bar" class="fixed top-0 w-full z-[150] bg-indigo-950 text-white px-4 py-1 text-[10px] font-bold flex justify-between hidden">
-    <span id="flight-info">✈️ 載入中...</span>
-    <span id="terminal-info">T2</span>
+<div id="status-bar" class="fixed top-0 w-full z-[150] bg-indigo-950 text-white px-4 py-1.5 text-[10px] font-bold flex justify-between hidden transition-all">
+    <span id="flight-info">✈️ 航班資訊載入中...</span>
+    <span id="terminal-info">T2 航廈</span>
 </div>
 
-<header id="main-nav" class="glass-header fixed w-full z-[140]">
-    <div class="px-4 py-3 flex justify-between items-center">
-        <h1 class="font-black text-xl italic text-indigo-600 tracking-tighter" onclick="location.reload()">THAI.26</h1>
-        <button onclick="switchView('stats')" id="view-btn" class="text-[11px] font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-xl">花費統計</button>
+<header id="main-nav" class="glass-header fixed w-full z-[140] transition-all duration-300">
+    <div class="px-5 py-4 flex justify-between items-center">
+        <h1 class="font-black text-2xl italic text-indigo-600 tracking-tighter" onclick="location.reload()">THAI.26</h1>
+        <button onclick="switchView('stats')" id="view-btn" class="text-xs font-bold bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl border border-indigo-100">花費統計</button>
     </div>
-    <div class="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
-        <button onclick="setDay(1)" id="tab-1" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D1 3/19</button>
-        <button onclick="setDay(2)" id="tab-2" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D2 3/20</button>
-        <button onclick="setDay(3)" id="tab-3" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D3 3/21</button>
-        <button onclick="setDay(4)" id="tab-4" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D4 3/22</button>
-        <button onclick="setDay(5)" id="tab-5" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D5 3/23</button>
-        <button onclick="setDay(6)" id="tab-6" class="tab-btn flex-shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D6 3/24</button>
+    <div class="flex gap-2 px-5 pb-4 overflow-x-auto no-scrollbar">
+        <button onclick="setDay(1)" id="tab-1" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D1 3/19</button>
+        <button onclick="setDay(2)" id="tab-2" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D2 3/20</button>
+        <button onclick="setDay(3)" id="tab-3" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D3 3/21</button>
+        <button onclick="setDay(4)" id="tab-4" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D4 3/22</button>
+        <button onclick="setDay(5)" id="tab-5" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D5 3/23</button>
+        <button onclick="setDay(6)" id="tab-6" class="tab-btn flex-shrink-0 px-5 py-2 rounded-xl text-xs font-bold bg-white text-slate-400 border border-slate-100">D6 3/24</button>
     </div>
 </header>
 
-<main id="view-list" class="pt-32 px-4 pb-24 space-y-2">
-    <div id="plan-container" class="space-y-1.5"></div>
+<main id="view-list" class="pt-40 px-5 pb-24 space-y-2">
+    <div id="plan-container" class="space-y-2">
+        </div>
 </main>
 
-<main id="view-stats" class="hidden pt-32 px-4 pb-24 space-y-4">
-    <div class="bg-indigo-600 rounded-3xl p-6 text-white shadow-lg">
-        <p class="text-[10px] font-bold opacity-70 mb-1 uppercase">Total Cost</p>
-        <h2 id="stats-total" class="text-3xl font-black italic">฿0</h2>
-        <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-indigo-400/50 text-[11px] font-bold">
-            <div>博懷：<span id="stats-b">฿0</span></div>
-            <div>阿正：<span id="stats-a">฿0</span></div>
+<main id="view-stats" class="hidden pt-40 px-5 pb-24 space-y-6">
+    <div class="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl">
+        <p class="text-[10px] font-bold opacity-70 mb-1 uppercase tracking-widest">Total Spend</p>
+        <h2 id="stats-total" class="text-4xl font-black italic">฿0</h2>
+        <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-indigo-400/50">
+            <div><p class="text-[10px] opacity-70 mb-1">博懷 已付</p><p id="stats-b" class="text-xl font-bold">฿0</p></div>
+            <div><p class="text-[10px] opacity-70 mb-1">阿正 已付</p><p id="stats-a" class="text-xl font-bold">฿0</p></div>
         </div>
     </div>
-    <div id="cat-list" class="space-y-1"></div>
+    <div id="cat-list" class="space-y-2"></div>
 </main>
 
-<button onclick="openAddModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-[160]">+</button>
-
-<div id="quick-cost-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-[300]" onclick="closeQuickCost()"></div>
-<div id="quick-cost-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] bg-white rounded-3xl z-[310] p-6 shadow-2xl hidden">
-    <h4 class="text-sm font-bold text-slate-500 mb-4" id="quick-cost-title">快速記帳</h4>
-    <div class="flex gap-2">
-        <input type="number" id="quick-cost-input" class="flex-1 bg-slate-100 p-4 rounded-2xl outline-none font-black text-2xl text-indigo-600" placeholder="0" autofocus>
-        <button onclick="submitQuickCost()" class="bg-indigo-600 text-white px-6 rounded-2xl font-bold">OK</button>
+<div id="quick-cost-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[300]" onclick="closeQuickCost()"></div>
+<div id="quick-cost-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] bg-white rounded-[2rem] z-[310] p-6 shadow-2xl hidden">
+    <p id="quick-cost-title" class="text-sm font-bold text-slate-400 mb-4 text-center">修改金額</p>
+    <div class="flex gap-3">
+        <input type="number" id="quick-cost-input" class="flex-1 bg-slate-100 p-4 rounded-2xl outline-none font-black text-3xl text-indigo-600 text-center" placeholder="0">
+        <button onclick="submitQuickCost()" class="bg-indigo-600 text-white px-6 rounded-2xl font-bold active:scale-95">完成</button>
     </div>
 </div>
 
 <div id="modal-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-[200]" onclick="closeModal()"></div>
-<div id="modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] z-[210] translate-y-full transition-transform duration-300 p-6 pb-10 shadow-2xl max-h-[85vh] overflow-y-auto">
-    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+<div id="modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] z-[210] translate-y-full transition-transform duration-300 p-8 pb-12 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
     <div class="flex justify-between items-center mb-6">
-        <h3 id="modal-title" class="font-black text-xl">編輯行程</h3>
-        <button onclick="deleteData()" id="btn-delete" class="text-red-500 text-[10px] font-bold bg-red-50 px-3 py-1 rounded-lg">刪除</button>
+        <h3 id="modal-title" class="font-black text-2xl text-slate-800">編輯行程</h3>
+        <button onclick="deleteData()" id="btn-delete" class="text-red-500 text-xs font-bold bg-red-50 px-3 py-1 rounded-lg">刪除項目</button>
     </div>
-    <div class="space-y-4">
-        <input type="text" id="m-title" placeholder="項目名稱" class="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold border">
-        <div class="grid grid-cols-2 gap-3">
-            <input type="time" id="m-time" class="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold border">
-            <select id="m-type" class="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold text-indigo-600 border">
-                <option value="spot">景點</option><option value="food">美食</option><option value="transport">交通</option><option value="hotel">飯店</option><option value="flight">航班</option>
-            </select>
+    <div class="space-y-5">
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">行程名稱</label>
+            <input type="text" id="m-title" class="w-full bg-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 border-2 border-transparent focus:border-indigo-500">
         </div>
-        <div class="grid grid-cols-2 gap-3">
-            <input type="number" id="m-cost" placeholder="金額 THB" class="w-full bg-slate-50 p-4 rounded-xl outline-none font-black text-indigo-600 border">
-            <select id="m-payer" class="w-full bg-slate-50 p-4 rounded-xl outline-none font-bold border">
-                <option value="博懷">博懷</option><option value="阿正">阿正</option>
-            </select>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">時間 (滾輪)</label>
+                <input type="time" id="m-time" class="w-full bg-slate-100 p-4 rounded-2xl outline-none font-bold border-2 border-transparent">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">類別</label>
+                <select id="m-type" class="w-full bg-slate-100 p-4 rounded-2xl outline-none font-bold text-indigo-600 border-2 border-transparent">
+                    <option value="spot">景點</option><option value="food">美食</option><option value="transport">交通</option><option value="hotel">飯店</option><option value="flight">航班</option>
+                </select>
+            </div>
         </div>
-        <input type="text" id="m-url" placeholder="地圖/網頁連結" class="w-full bg-slate-50 p-4 rounded-xl outline-none text-xs text-blue-500 border">
-        <textarea id="m-note" placeholder="備註" class="w-full bg-slate-50 p-4 rounded-xl outline-none h-20 text-sm border"></textarea>
-        <button onclick="saveData()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg">儲存並同步</button>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">花費 THB</label>
+                <input type="number" id="m-cost" class="w-full bg-slate-100 p-4 rounded-2xl outline-none font-black text-indigo-600 border-2 border-transparent">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">付款人</label>
+                <select id="m-payer" class="w-full bg-slate-100 p-4 rounded-2xl outline-none font-bold border-2 border-transparent">
+                    <option value="博懷">博懷</option><option value="阿正">阿正</option>
+                </select>
+            </div>
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">地圖連結</label>
+            <input type="text" id="m-url" class="w-full bg-slate-100 p-4 rounded-2xl outline-none text-xs text-blue-500 border-2 border-transparent">
+        </div>
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">備註</label>
+            <textarea id="m-note" class="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 text-sm border-2 border-transparent"></textarea>
+        </div>
+        <button onclick="saveData()" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black text-lg shadow-lg active:scale-95 transition-all">同步雲端資料</button>
     </div>
 </div>
+
+<button onclick="openAddModal()" class="fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-3xl z-[160] active:scale-90 transition-all">+</button>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyTRAUKi7Uo8Mn0ih_q9qx4LBHM_6nwGIb6MLK1n1z46p4WcP9sMpLeuGS3utgMNQ19ZA/exec";
     let allData = [];
     let currentDay = 1;
     let currentEditId = null;
-    let quickCostPlan = null;
+    let quickPlanData = null;
 
-    const TYPE_CH = { spot: '景點', food: '美食', transport: '交通', hotel: '飯店', flight: '航班' };
+    const TYPE_ZH = { spot: '景點', food: '美食', transport: '交通', hotel: '飯店', flight: '航班' };
 
+    // 格式化時間，避免 Google Sheet 亂碼
     function formatTime(t) {
         if (!t) return "";
         let s = String(t);
@@ -118,26 +149,30 @@
     }
 
     async function fetchData() {
-        const res = await fetch(GAS_URL);
-        allData = await res.json();
-        render();
-        calcStats();
+        try {
+            const res = await fetch(GAS_URL);
+            allData = await res.json();
+            render();
+            calcStats();
+        } catch (e) { console.error("資料載入失敗", e); }
     }
 
     function setDay(d) {
         currentDay = d;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab-${d}`).classList.add('active');
+        
         const statusBar = document.getElementById('status-bar');
         const mainNav = document.getElementById('main-nav');
         if (d === 1 || d === 6) {
             statusBar.classList.remove('hidden');
-            mainNav.style.top = "26px";
-            document.getElementById('flight-info').innerText = d === 1 ? "✈️ JX741 (09:25) 櫃檯: T2-6" : "✈️ JX742 (13:45) 返台行程";
+            mainNav.style.top = "30px";
+            document.getElementById('flight-info').innerText = d === 1 ? "✈️ 去程：JX741 (09:25) 報到: T2-6號" : "✈️ 回程：JX742 (13:45) 返台領行李";
         } else {
             statusBar.classList.add('hidden');
             mainNav.style.top = "0";
         }
+        switchView('list');
         render();
     }
 
@@ -149,25 +184,25 @@
         dailyPlans.forEach(plan => {
             const card = document.createElement('div');
             card.dataset.id = plan.ID;
-            card.className = "plan-card bg-white p-3 rounded-2xl shadow-sm flex items-center";
+            card.className = "plan-card bg-white p-4 rounded-3xl shadow-sm flex items-center";
             
-            const costText = plan.Cost ? `฿${parseInt(plan.Cost).toLocaleString()}` : `<span class="text-slate-300 font-normal text-[10px]">+฿</span>`;
+            const costLabel = plan.Cost ? `฿${parseInt(plan.Cost).toLocaleString()}` : `<span class="text-slate-300 font-normal">+฿</span>`;
             
             card.innerHTML = `
                 <div class="drag-handle">☰</div>
-                <div class="flex-1" onclick="openEditModal(${JSON.stringify(plan).replace(/"/g, '"')})">
-                    <div class="flex items-center gap-2 mb-0.5">
-                        <span class="tag tag-${plan.Type || 'spot'}">${TYPE_CH[plan.Type] || '景點'}</span>
-                        <span class="text-[9px] font-black text-slate-300 uppercase">${formatTime(plan.Time)}</span>
+                <div class="flex-1" onclick="openEditModal(${JSON.stringify(plan).replace(/"/g, '&quot;')})">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="tag tag-${plan.Type || 'spot'}">${TYPE_ZH[plan.Type] || '景點'}</span>
+                        <span class="text-[10px] font-black text-slate-300 uppercase">${formatTime(plan.Time)}</span>
                     </div>
                     <h3 class="font-bold text-slate-800 text-sm leading-tight">${plan.Title}</h3>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div onclick="event.stopPropagation(); openQuickCost(${JSON.stringify(plan).replace(/"/g, '"')})" class="cost-trigger text-right px-2 py-1 rounded-lg">
-                        <p class="text-[11px] font-black text-indigo-600">${costText}</p>
-                        ${plan.Payer ? `<p class="text-[7px] font-bold text-slate-300 text-center uppercase">${plan.Payer}</p>` : ''}
+                <div class="flex items-center gap-4">
+                    <div onclick="event.stopPropagation(); openQuickCost(${JSON.stringify(plan).replace(/"/g, '&quot;')})" class="text-right px-2 active:bg-indigo-50 rounded-lg">
+                        <p class="text-xs font-black text-indigo-600">${costLabel}</p>
+                        ${plan.Payer ? `<p class="text-[8px] font-bold text-slate-300 uppercase">${plan.Payer}</p>` : ''}
                     </div>
-                    <button onclick="event.stopPropagation(); window.open('${plan.URL || 'https://www.google.com/maps/search/?api=1&query=$' + encodeURIComponent(plan.Title + " Thailand")}')" class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <button onclick="event.stopPropagation(); window.open('${plan.URL || 'https://www.google.com/maps/search/' + encodeURIComponent(plan.Title + ' Thailand')}')" class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                     </button>
                 </div>
@@ -176,7 +211,7 @@
         });
 
         new Sortable(container, {
-            handle: '.drag-handle', animation: 150, ghostClass: 'bg-slate-50',
+            handle: '.drag-handle', animation: 200, ghostClass: 'sortable-ghost',
             onEnd: async () => {
                 const ids = Array.from(container.children).map(c => c.dataset.id);
                 await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "reorder", ids: ids, day: currentDay }) });
@@ -184,11 +219,11 @@
         });
     }
 
-    // 快速修改金額邏輯
-    function openQuickCost(plan) {
-        quickCostPlan = plan;
-        document.getElementById('quick-cost-title').innerText = `修改「${plan.Title}」金額`;
-        document.getElementById('quick-cost-input').value = plan.Cost || "";
+    // 快速記帳功能
+    function openQuickCost(p) {
+        quickPlanData = p;
+        document.getElementById('quick-cost-title').innerText = `修改「${p.Title}」金額`;
+        document.getElementById('quick-cost-input').value = p.Cost || "";
         document.getElementById('quick-cost-overlay').classList.remove('hidden');
         document.getElementById('quick-cost-modal').classList.remove('hidden');
         document.getElementById('quick-cost-input').focus();
@@ -198,9 +233,9 @@
         document.getElementById('quick-cost-modal').classList.add('hidden');
     }
     async function submitQuickCost() {
-        const newCost = document.getElementById('quick-cost-input').value;
+        const val = document.getElementById('quick-cost-input').value;
         closeQuickCost();
-        const payload = { ...quickCostPlan, action: "update", cost: newCost };
+        const payload = { ...quickPlanData, action: "update", cost: val };
         await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         fetchData();
     }
@@ -213,20 +248,21 @@
     }
 
     function calcStats() {
-        let total = 0, b = 0, a = 0;
+        let t = 0, b = 0, a = 0;
         allData.forEach(p => {
-            const cost = parseFloat(p.Cost) || 0;
-            total += cost;
-            if (p.Payer === "博懷") b += cost;
-            if (p.Payer === "阿正") a += cost;
+            const c = parseFloat(p.Cost) || 0;
+            t += c;
+            if (p.Payer === "博懷") b += c;
+            if (p.Payer === "阿正") a += c;
         });
-        document.getElementById('stats-total').innerText = `฿${total.toLocaleString()}`;
+        document.getElementById('stats-total').innerText = `฿${t.toLocaleString()}`;
         document.getElementById('stats-b').innerText = `฿${b.toLocaleString()}`;
         document.getElementById('stats-a').innerText = `฿${a.toLocaleString()}`;
     }
 
     function openEditModal(p) {
         currentEditId = p.ID;
+        document.getElementById('modal-title').innerText = "編輯行程項目";
         document.getElementById('m-title').value = p.Title;
         document.getElementById('m-time').value = formatTime(p.Time);
         document.getElementById('m-type').value = p.Type || 'spot';
@@ -237,16 +273,28 @@
         document.getElementById('btn-delete').style.display = "block";
         showModal();
     }
-    function openAddModal() { currentEditId = null; document.getElementById('m-title').value = ""; document.getElementById('btn-delete').style.display = "none"; showModal(); }
+
+    function openAddModal() {
+        currentEditId = null;
+        document.getElementById('m-title').value = "";
+        document.getElementById('m-time').value = "";
+        document.getElementById('m-cost').value = "";
+        document.getElementById('m-note').value = "";
+        document.getElementById('btn-delete').style.display = "none";
+        showModal();
+    }
+
     function showModal() { document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById('modal').classList.remove('translate-y-full'); }
     function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal').classList.add('translate-y-full'); }
+
     async function saveData() {
         const payload = { action: currentEditId ? "update" : "add", id: currentEditId || Date.now(), day: currentDay, time: document.getElementById('m-time').value, title: document.getElementById('m-title').value, type: document.getElementById('m-type').value, cost: document.getElementById('m-cost').value, payer: document.getElementById('m-payer').value, url: document.getElementById('m-url').value, note: document.getElementById('m-note').value };
         closeModal();
         await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         fetchData();
     }
-    async function deleteData() { if(!confirm("確定刪除？")) return; closeModal(); await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) }); fetchData(); }
+
+    async function deleteData() { if(!confirm("確定刪除此行程？")) return; closeModal(); await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) }); fetchData(); }
 
     window.onload = () => { setDay(1); fetchData(); };
 </script>
