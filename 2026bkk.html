@@ -3,18 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2026 泰國旅遊即時導路</title>
+    <title>THAI.26 | 泰國旅程管家</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { font-family: "PingFang TC", "Heiti TC", sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); }
-        /* 修正分頁按鈕啟動時的視覺，確保字體清晰 */
-        .day-tab-active { background: #6366f1 !important; color: white !important; font-weight: 900; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .bottom-sheet { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        :root { --primary: #6366f1; --bg: #F8FAFC; }
+        body { font-family: "PingFang TC", "Inter", sans-serif; background: var(--bg); -webkit-tap-highlight-color: transparent; }
         
-        /* 標籤顏色 */
+        /* 毛玻璃導航 */
+        .glass-header { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 日期分頁滾動與樣式 */
+        .day-scroller { scrollbar-width: none; -ms-overflow-style: none; }
+        .day-scroller::-webkit-scrollbar { display: none; }
+        
+        .tab-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white !important;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        /* 行程卡片動畫 */
+        .plan-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .plan-card:active { transform: scale(0.97); }
+
+        /* 即時狀態列專屬 */
+        .status-bar {
+            background: linear-gradient(90deg, #1e1b4b 0%, #312e81 100%);
+        }
+
+        /* 類型標籤 */
+        .tag { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
         .tag-flight { background: #fff7ed; color: #c2410c; }
         .tag-transport { background: #f1f5f9; color: #475569; }
         .tag-spot { background: #f0fdf4; color: #166534; }
@@ -22,112 +54,126 @@
         .tag-hotel { background: #eef2ff; color: #3730a3; }
     </style>
 </head>
-<body class="bg-[#FBFBFF] text-slate-900 transition-all duration-200">
+<body class="text-slate-900">
 
-<div id="realtime-header" class="fixed top-0 w-full z-[120] bg-indigo-900 text-white p-3 shadow-lg hidden">
-    <div class="flex justify-between items-center text-[10px] font-bold tracking-widest px-2">
-        <span id="flight-live-status">✈️ 航班狀態載入中...</span>
-        <span id="hsr-live-status">🚄 報到櫃檯：待更新</span>
+<div id="realtime-status" class="status-bar fixed top-0 w-full z-[150] text-white px-5 py-2 hidden shadow-lg">
+    <div class="flex justify-between items-center text-[10px] font-bold tracking-tighter uppercase">
+        <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span></span>
+            <span id="flight-info">星宇航空 JX741 (09:25) 準點</span>
+        </div>
+        <span id="terminal-info">T2 - 6號櫃檯</span>
     </div>
 </div>
 
-<nav class="glass-nav fixed top-0 w-full z-[110] border-b border-slate-100 transition-all duration-300" id="main-nav">
-    <div class="px-5 py-5 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <h1 class="font-black text-xl tracking-tighter italic cursor-pointer" onclick="location.reload()">THAI.26</h1>
+<header id="main-header" class="glass-header fixed w-full z-[140] transition-all duration-300">
+    <div class="px-6 py-5 flex justify-between items-center">
+        <div>
+            <h1 class="font-black text-2xl tracking-tighter italic text-indigo-600" onclick="window.scrollTo({top:0, behavior:'smooth'})">THAI.26</h1>
+            <p id="current-date-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">MARCH 19, 2026</p>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="flex bg-slate-100 rounded-lg p-1">
-                <button onclick="adjustFont(-2)" class="px-2 text-xs font-bold text-slate-500">A-</button>
-                <button onclick="adjustFont(2)" class="px-2 text-xs font-bold text-slate-500">A+</button>
-            </div>
-            <div id="nav-action-zone">
-                <button onclick="switchView('stats')" class="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold">花費統計</button>
-            </div>
+        <div class="flex items-center gap-2">
+            <button onclick="switchView('stats')" id="view-toggle-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-2xl text-xs font-bold transition-colors">花費統計</button>
         </div>
     </div>
     
-    <div id="day-nav" class="flex gap-3 px-5 pb-4 overflow-x-auto no-scrollbar pt-1 bg-white/50">
-        <button onclick="setDay(1)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-1">D1 3/19</button>
-        <button onclick="setDay(2)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-2">D2 3/20</button>
-        <button onclick="setDay(3)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-3">D3 3/21</button>
-        <button onclick="setDay(4)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-4">D4 3/22</button>
-        <button onclick="setDay(5)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-5">D5 3/23</button>
-        <button onclick="setDay(6)" class="day-tab flex-shrink-0 px-5 py-2 rounded-2xl text-xs font-bold bg-white border border-slate-100 text-slate-500 transition-all" id="tab-6">D6 3/24</button>
+    <div class="day-scroller flex gap-3 px-6 pb-4 overflow-x-auto">
+        <button onclick="setDay(1)" id="tab-1" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D1</button>
+        <button onclick="setDay(2)" id="tab-2" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D2</button>
+        <button onclick="setDay(3)" id="tab-3" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D3</button>
+        <button onclick="setDay(4)" id="tab-4" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D4</button>
+        <button onclick="setDay(5)" id="tab-5" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D5</button>
+        <button onclick="setDay(6)" id="tab-6" class="tab-btn flex-shrink-0 px-6 py-2.5 rounded-2xl text-xs font-black bg-white text-slate-400 border border-slate-100">D6</button>
     </div>
-</nav>
+</header>
 
-<main id="view-list" class="pt-44 p-5 space-y-4 pb-32">
-    <div id="transport-suggestion" class="hidden bg-white p-6 rounded-[2rem] shadow-sm border border-indigo-50 mb-6">
-        <h3 id="suggestion-title" class="text-xs font-black text-indigo-400 mb-3 uppercase tracking-widest">即時資訊建議</h3>
-        <div class="space-y-3" id="suggestion-box"></div>
+<main id="view-list" class="pt-48 px-6 pb-32 space-y-6">
+    <div id="alert-box" class="hidden bg-indigo-50 border border-indigo-100 p-5 rounded-[2rem]">
+        <h4 id="alert-title" class="text-xs font-black text-indigo-500 uppercase tracking-widest mb-1">返台接駁提醒</h4>
+        <p id="alert-content" class="text-sm text-slate-600 font-medium"></p>
     </div>
-    <div id="card-container" class="space-y-4"></div>
+    <div id="plan-container" class="grid gap-5">
+        </div>
 </main>
 
-<main id="view-stats" class="pt-44 p-5 hidden space-y-6 pb-32">
-    <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
-        <p class="text-slate-400 text-xs font-bold mb-2">總支出概覽</p>
-        <h2 id="grand-total" class="text-4xl font-black italic">฿0</h2>
-        <div class="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800 mt-6">
-            <div><p class="text-[10px] text-slate-500 font-bold">博懷 已付</p><p id="total-bohuai" class="text-lg font-bold">฿0</p></div>
-            <div><p class="text-[10px] text-slate-500 font-bold">阿正 已付</p><p id="total-azheng" class="text-lg font-bold">฿0</p></div>
+<main id="view-stats" class="hidden pt-48 px-6 pb-32 space-y-8">
+    <div class="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-200">
+        <p class="text-indigo-200 text-xs font-bold mb-2 uppercase tracking-widest">目前累計支出</p>
+        <h2 id="stats-total" class="text-5xl font-black italic">฿0</h2>
+        <div class="flex gap-10 mt-8 pt-6 border-t border-indigo-500/50">
+            <div><p class="text-[10px] text-indigo-200 font-bold uppercase">博懷</p><p id="stats-b" class="text-xl font-bold">฿0</p></div>
+            <div><p class="text-[10px] text-indigo-200 font-bold uppercase">阿正</p><p id="stats-a" class="text-xl font-bold">฿0</p></div>
         </div>
     </div>
-    <div id="category-stats" class="bg-white rounded-[2rem] p-6 shadow-sm space-y-4"></div>
+    <div id="category-list" class="space-y-4"></div>
 </main>
 
-<div id="modal-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-[200]" onclick="closeModal()"></div>
-<div id="modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] z-[210] bottom-sheet translate-y-full p-8 pb-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-    <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-8"></div>
-    <div class="flex justify-between items-center mb-6">
-        <h3 id="modal-title" class="text-xl font-bold">編輯行程</h3>
-        <button onclick="deleteData()" id="btn-delete" class="text-red-500 text-sm font-bold">刪除項目</button>
+<div class="fixed bottom-8 right-6 flex flex-col gap-4 z-[200]">
+    <button onclick="openAddModal()" class="w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-3xl font-light active:scale-90 transition-all">+</button>
+</div>
+
+<div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[300]" onclick="closeModal()"></div>
+<div id="modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] z-[310] translate-y-full transition-transform duration-500 p-8 pb-12 shadow-2xl overflow-y-auto max-h-[90vh]">
+    <div class="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-8"></div>
+    <div class="flex justify-between items-center mb-8">
+        <h3 id="modal-title" class="text-2xl font-black text-slate-800">編輯行程</h3>
+        <button onclick="deleteData()" id="btn-delete" class="text-red-500 font-bold text-sm bg-red-50 px-4 py-2 rounded-xl">刪除</button>
     </div>
-    <div class="space-y-5">
-        <input type="text" id="m-title" placeholder="行程名稱" class="w-full bg-slate-50 p-4 rounded-2xl outline-none font-bold">
-        <div class="grid grid-cols-2 gap-4">
-            <input type="text" id="m-time" placeholder="時間 (HH:mm)" class="bg-slate-50 p-4 rounded-2xl outline-none">
-            <select id="m-type" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold text-indigo-600">
-                <option value="spot">景點</option><option value="food">美食</option><option value="transport">交通</option><option value="hotel">飯店</option><option value="flight">航班</option>
-            </select>
+    <div class="space-y-6">
+        <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-2">項目名稱</label>
+            <input type="text" id="m-title" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none font-bold text-lg border-2 border-transparent focus:border-indigo-500 transition-all">
         </div>
         <div class="grid grid-cols-2 gap-4">
-            <input type="number" id="m-cost" placeholder="金額 (THB)" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold text-lg">
-            <select id="m-payer" class="bg-slate-50 p-4 rounded-2xl outline-none font-bold italic">
-                <option value="博懷">博懷</option><option value="阿正">阿正</option>
-            </select>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">時間</label>
+                <input type="text" id="m-time" placeholder="HH:mm" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none font-bold">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">類別</label>
+                <select id="m-type" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none font-bold text-indigo-600 appearance-none">
+                    <option value="spot">景點</option><option value="food">美食</option><option value="transport">交通</option><option value="hotel">飯店</option><option value="flight">航班</option>
+                </select>
+            </div>
         </div>
-        <input type="text" id="m-url" placeholder="地圖或網頁連結" class="w-full bg-slate-50 p-4 rounded-2xl outline-none text-blue-500 text-sm">
-        <textarea id="m-note" placeholder="備註內容" class="w-full bg-slate-50 p-4 rounded-2xl outline-none h-24 text-sm"></textarea>
-        <button onclick="saveData()" class="w-full bg-indigo-600 text-white py-5 rounded-3xl font-bold active:scale-95 transition-all">同步至雲端</button>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">金額 (THB)</label>
+                <input type="number" id="m-cost" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none font-black text-xl text-indigo-600">
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">付款人</label>
+                <select id="m-payer" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none font-bold">
+                    <option value="博懷">博懷</option><option value="阿正">阿正</option>
+                </select>
+            </div>
+        </div>
+        <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-2">相關網址 / 地圖</label>
+            <input type="text" id="m-url" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none text-sm text-blue-500">
+        </div>
+        <div class="space-y-2">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-2">詳細備註</label>
+            <textarea id="m-note" class="w-full bg-slate-50 p-5 rounded-[1.5rem] outline-none h-28 text-sm"></textarea>
+        </div>
+        <button onclick="saveData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6 rounded-[2rem] font-black text-lg shadow-xl shadow-indigo-100 transition-all active:scale-95">更新資料到雲端</button>
     </div>
 </div>
 
-<button onclick="openAddModal()" class="fixed bottom-10 right-8 bg-indigo-600 text-white w-16 h-16 rounded-full shadow-2xl z-50 flex items-center justify-center active:scale-90 transition-all text-3xl font-light">+</button>
-
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyTRAUKi7Uo8Mn0ih_q9qx4LBHM_6nwGIb6MLK1n1z46p4WcP9sMpLeuGS3utgMNQ19ZA/exec";
+    const DATE_LABELS = ["MAR 19", "MAR 20", "MAR 21", "MAR 22", "MAR 23", "MAR 24"];
+    const TYPE_CH = { spot: "景點", food: "美食", transport: "交通", hotel: "住宿", flight: "航班" };
+    
     let allData = [];
     let currentDay = 1;
     let currentEditId = null;
-    let fontSize = 16;
 
-    // 3. 強化時間處理邏輯：解決 Google Sheet 時間同步不正確問題
-    function formatTime(timeInput) {
-        if (!timeInput) return "--:--";
-        let str = String(timeInput);
-        
-        // 如果是完整的 ISO 日期格式 (2026-03-19T05:21:00...)
-        if (str.includes('T')) {
-            return str.split('T')[1].substring(0, 5);
-        }
-        
-        // 如果是純數字或是 5:21 這種短格式
-        if (str.length <= 5) return str;
-        
-        // 否則嘗試裁切前 5 碼 (例如 05:21:00 -> 05:21)
-        return str.substring(0, 5);
+    // 核心：修正時間格式 Bug
+    function parseTime(t) {
+        if (!t) return "--:--";
+        let s = String(t);
+        return s.includes('T') ? s.split('T')[1].substring(0, 5) : s.substring(0, 5);
     }
 
     async function fetchData() {
@@ -135,123 +181,173 @@
             const res = await fetch(GAS_URL);
             allData = await res.json();
             render();
-            calcStats();
-            updateRealtimeInfo();
-        } catch (e) { console.error("加載失敗", e); }
-    }
-
-    function updateRealtimeInfo() {
-        const header = document.getElementById('realtime-header');
-        const suggestion = document.getElementById('transport-suggestion');
-        const mainNav = document.getElementById('main-nav');
-        const viewList = document.getElementById('view-list');
-        
-        if (currentDay === 1 || currentDay === 6) {
-            header.classList.remove('hidden');
-            mainNav.style.top = '40px';
-            viewList.style.paddingTop = '13rem'; // 增加間距防止遮擋
-            if (currentDay === 1) {
-                document.getElementById('flight-live-status').innerText = "✈️ JX741 (09:25): 準點 / 登機門: 待定";
-                document.getElementById('hsr-live-status').innerText = "🕒 報到：T2 - 6號櫃檯";
-            } else {
-                suggestion.classList.remove('hidden');
-                document.getElementById('flight-live-status').innerText = "✈️ JX742 (13:45): 準點";
-                document.getElementById('hsr-live-status').innerText = "🚄 下班高鐵：21:10";
-            }
-        } else {
-            header.classList.add('hidden');
-            suggestion.classList.add('hidden');
-            mainNav.style.top = '0px';
-            viewList.style.paddingTop = '10rem';
-        }
+            calculateStats();
+        } catch (e) { alert("雲端連線失敗，請檢查網路或 GAS URL"); }
     }
 
     function setDay(d) {
         currentDay = d;
-        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('day-tab-active'));
-        document.getElementById(`tab-${d}`).classList.add('day-tab-active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${d}`).classList.add('active');
+        document.getElementById('current-date-label').innerText = `MARCH ${18+d}, 2026`;
+        
+        // 即時列控制
+        const statusHeader = document.getElementById('realtime-status');
+        const mainHeader = document.getElementById('main-header');
+        const alertBox = document.getElementById('alert-box');
+        
+        if (d === 1 || d === 6) {
+            statusHeader.classList.remove('hidden');
+            mainHeader.style.top = "36px";
+            if (d === 1) {
+                document.getElementById('flight-info').innerText = "星宇 JX741 (09:25) 準點";
+                document.getElementById('terminal-info').innerText = "T2-6號櫃檯報到";
+            } else {
+                document.getElementById('flight-info').innerText = "星宇 JX742 (13:45) 準點";
+                document.getElementById('terminal-info').innerText = "預計 18:25 抵達桃園";
+                alertBox.classList.remove('hidden');
+                document.getElementById('alert-content').innerText = "返台高鐵建議：21:10 (853次) 或 21:21 (1257次)";
+            }
+        } else {
+            statusHeader.classList.add('hidden');
+            mainHeader.style.top = "0";
+            alertBox.classList.add('hidden');
+        }
+        
+        switchView('list');
         render();
-        updateRealtimeInfo();
     }
 
     function render() {
-        const container = document.getElementById('card-container');
+        const container = document.getElementById('plan-container');
         container.innerHTML = '';
-        const filtered = allData.filter(d => d.Day == currentDay);
+        const dailyPlans = allData.filter(p => p.Day == currentDay);
 
-        filtered.forEach(item => {
+        dailyPlans.forEach(plan => {
+            const time = parseTime(plan.Time);
             const card = document.createElement('div');
-            card.className = "bg-white p-6 rounded-[2.2rem] shadow-sm border border-slate-50 active:scale-[0.98] transition-all";
-            card.onclick = () => openEditModal(item);
-            
-            // 使用新修正的時間格式化函式
-            const timeStr = formatTime(item.Time);
+            card.className = "plan-card bg-white p-6 rounded-[2.5rem] shadow-sm flex flex-col gap-4 relative overflow-hidden";
+            card.onclick = () => openEditModal(plan);
             
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold tag-${item.Type || 'spot'} uppercase tracking-widest">${item.Type || '景點'}</span>
-                    ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-indigo-600 font-bold text-[10px]">查看地圖</button>` : ''}
+                <div class="flex justify-between items-start">
+                    <span class="tag tag-${plan.Type || 'spot'}">${TYPE_CH[plan.Type] || '景點'}</span>
+                    <span class="text-[10px] font-black text-slate-300 uppercase">${time}</span>
                 </div>
-                <div class="flex items-end justify-between">
-                    <div class="flex-1 pr-4">
-                        <p class="text-[10px] font-black text-slate-300 uppercase mb-1">${timeStr}</p>
-                        <h4 class="font-bold text-slate-800 text-lg leading-tight break-all">${item.Title}</h4>
-                        <p class="text-[10px] text-slate-400 mt-2 line-clamp-1 italic">${item.Note || ''}</p>
+                <div class="flex justify-between items-end">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-slate-800 leading-tight">${plan.Title}</h3>
+                        <p class="text-xs text-slate-400 mt-1 line-clamp-1 italic">${plan.Note || ''}</p>
                     </div>
-                    ${item.Cost ? `<div class="text-right flex-shrink-0"><p class="text-xs font-black text-slate-700 italic">฿${parseInt(item.Cost).toLocaleString()}</p></div>` : ''}
+                    ${plan.Cost ? `<div class="text-right ml-4"><p class="text-sm font-black text-indigo-600">฿${parseInt(plan.Cost).toLocaleString()}</p><p class="text-[8px] font-bold text-slate-300 uppercase">${plan.Payer}</p></div>` : ''}
                 </div>
+                ${plan.URL ? `
+                <div class="flex gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); window.open('${plan.URL}')" class="bg-indigo-50 text-indigo-600 text-[10px] font-black px-4 py-2 rounded-xl flex items-center gap-1">📍 開啟導航</button>
+                </div>` : ''}
             `;
             container.appendChild(card);
         });
         new Sortable(container, { animation: 150 });
     }
 
-    function switchView(v) {
-        const isList = v === 'list';
-        document.getElementById('view-list').classList.toggle('hidden', !isList);
-        document.getElementById('view-stats').classList.toggle('hidden', isList);
-        document.getElementById('day-nav').classList.toggle('hidden', !isList);
-        const actionZone = document.getElementById('nav-action-zone');
-        actionZone.innerHTML = isList ? 
-            `<button onclick="switchView('stats')" class="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold">花費統計</button>` : 
-            `<button onclick="switchView('list')" class="bg-slate-900 text-white px-4 py-1.5 rounded-full text-xs font-bold">返回行程</button>`;
+    function calculateStats() {
+        let total = 0, b = 0, a = 0;
+        const cats = {};
+        allData.forEach(p => {
+            const cost = parseFloat(p.Cost) || 0;
+            total += cost;
+            if (p.Payer === "博懷") b += cost;
+            if (p.Payer === "阿正") a += cost;
+            cats[p.Type] = (cats[p.Type] || 0) + cost;
+        });
+
+        document.getElementById('stats-total').innerText = `฿${total.toLocaleString()}`;
+        document.getElementById('stats-b').innerText = `฿${b.toLocaleString()}`;
+        document.getElementById('stats-a').innerText = `฿${a.toLocaleString()}`;
+
+        const catList = document.getElementById('category-list');
+        catList.innerHTML = '<h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">支出分類</h3>';
+        for (let [type, val] of Object.entries(cats)) {
+            const pct = Math.round((val / total) * 100);
+            catList.innerHTML += `
+                <div class="bg-white p-6 rounded-[2rem] flex justify-between items-center shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-1.5 h-8 bg-indigo-500 rounded-full"></div>
+                        <div><p class="text-sm font-bold text-slate-800">${TYPE_CH[type] || '其他'}</p><p class="text-[10px] text-slate-400 font-bold">${pct}%</p></div>
+                    </div>
+                    <p class="text-lg font-black text-slate-700">฿${val.toLocaleString()}</p>
+                </div>
+            `;
+        }
     }
 
-    // Modal 與其他邏輯 (略，與前版一致)...
-    function openEditModal(item) {
-        currentEditId = item.ID;
-        document.getElementById('m-title').value = item.Title;
-        document.getElementById('m-time').value = formatTime(item.Time);
-        document.getElementById('m-type').value = item.Type || 'spot';
-        document.getElementById('m-cost').value = item.Cost || "";
-        document.getElementById('m-payer').value = item.Payer || '博懷';
-        document.getElementById('m-url').value = item.URL || "";
-        document.getElementById('m-note').value = item.Note || "";
-        document.getElementById('btn-delete').style.display = 'block';
+    function switchView(v) {
+        const isStats = v === 'stats';
+        document.getElementById('view-list').classList.toggle('hidden', isStats);
+        document.getElementById('view-stats').classList.toggle('hidden', !isStats);
+        document.getElementById('view-toggle-btn').innerText = isStats ? "返回行程" : "花費統計";
+        document.getElementById('view-toggle-btn').onclick = () => switchView(isStats ? 'list' : 'stats');
+    }
+
+    function openEditModal(p) {
+        currentEditId = p.ID;
+        document.getElementById('modal-title').innerText = "編輯行程項目";
+        document.getElementById('m-title').value = p.Title;
+        document.getElementById('m-time').value = parseTime(p.Time);
+        document.getElementById('m-type').value = p.Type || 'spot';
+        document.getElementById('m-cost').value = p.Cost || "";
+        document.getElementById('m-payer').value = p.Payer || "博懷";
+        document.getElementById('m-url').value = p.URL || "";
+        document.getElementById('m-note').value = p.Note || "";
+        document.getElementById('btn-delete').style.display = "block";
         showModal();
     }
-    function openAddModal() { currentEditId = null; document.getElementById('m-title').value = ""; document.getElementById('btn-delete').style.display = 'none'; showModal(); }
-    function showModal() { document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById('modal').classList.remove('translate-y-full'); }
-    function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal').classList.add('translate-y-full'); }
+
+    function openAddModal() {
+        currentEditId = null;
+        document.getElementById('modal-title').innerText = "新增行程行程";
+        document.getElementById('m-title').value = "";
+        document.getElementById('m-time').value = "";
+        document.getElementById('m-cost').value = "";
+        document.getElementById('m-note').value = "";
+        document.getElementById('btn-delete').style.display = "none";
+        showModal();
+    }
+
+    function showModal() {
+        document.getElementById('modal-overlay').classList.remove('hidden');
+        document.getElementById('modal').classList.remove('translate-y-full');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('modal').classList.add('translate-y-full');
+    }
+
     async function saveData() {
-        const payload = { action: currentEditId ? "update" : "add", id: currentEditId || Date.now(), day: currentDay, time: document.getElementById('m-time').value, title: document.getElementById('m-title').value, type: document.getElementById('m-type').value, cost: document.getElementById('m-cost').value, payer: document.getElementById('m-payer').value, url: document.getElementById('m-url').value, note: document.getElementById('m-note').value };
+        const payload = {
+            action: currentEditId ? "update" : "add",
+            id: currentEditId || Date.now(),
+            day: currentDay,
+            time: document.getElementById('m-time').value,
+            title: document.getElementById('m-title').value,
+            type: document.getElementById('m-type').value,
+            cost: document.getElementById('m-cost').value,
+            payer: document.getElementById('m-payer').value,
+            url: document.getElementById('m-url').value,
+            note: document.getElementById('m-note').value
+        };
         closeModal();
         await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         fetchData();
     }
-    async function deleteData() { if(!confirm('確認刪除？')) return; closeModal(); await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) }); fetchData(); }
 
-    function calcStats() {
-        let b = 0, a = 0, total = 0;
-        allData.forEach(d => {
-            const c = parseFloat(d.Cost) || 0;
-            total += c;
-            if (d.Payer === '博懷') b += c;
-            if (d.Payer === '阿正') a += c;
-        });
-        document.getElementById('grand-total').innerText = `฿${total.toLocaleString()}`;
-        document.getElementById('total-bohuai').innerText = `฿${b.toLocaleString()}`;
-        document.getElementById('total-azheng').innerText = `฿${a.toLocaleString()}`;
+    async function deleteData() {
+        if(!confirm("確定要刪除這筆行程嗎？")) return;
+        closeModal();
+        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) });
+        fetchData();
     }
 
     window.onload = () => {
