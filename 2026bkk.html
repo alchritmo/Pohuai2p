@@ -3,139 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🇹🇭 2026 泰國行儀表板</title>
+    <title>🇹🇭 泰國行 2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
-        .card-flight { border-left: 5px solid #fbbf24; }
-        .card-hotel { border-left: 5px solid #60a5fa; }
-        .card-spot { border-left: 5px solid #34d399; }
-        .card-food { border-left: 5px solid #f87171; }
-        .card-transport { border-left: 5px solid #94a3b8; }
-        @media (max-width: 640px) { .day-col { width: 100%; margin-bottom: 1.5rem; } }
+        body { font-family: sans-serif; -webkit-user-select: none; }
+        .tab-active { color: #2563eb; border-bottom: 3px solid #2563eb; font-weight: 900; }
+        .card-ghost { opacity: 0.3; background: #dbeafe; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-100 overflow-x-hidden">
 
-<nav class="bg-white p-4 sticky top-0 z-50 shadow-sm flex justify-between items-center border-b">
-    <div>
-        <h1 class="font-black text-slate-800 tracking-tight text-lg">2026 THAI TRAVEL</h1>
-        <p class="text-[10px] text-slate-400">同步狀態：<span id="sync-status">確認中...</span></p>
+<nav class="bg-white p-4 sticky top-0 z-[60] shadow-sm flex justify-between items-center border-b">
+    <div class="flex items-center gap-3">
+        <h1 class="font-black text-slate-800 text-lg">2026 THAI</h1>
+        <div class="flex border rounded-lg overflow-hidden text-[10px]">
+            <button onclick="changeFontSize(-2)" class="px-2 py-1 bg-gray-50 border-r text-slate-400">A-</button>
+            <button onclick="changeFontSize(2)" class="px-2 py-1 bg-gray-50 text-slate-400">A+</button>
+        </div>
     </div>
-    <span id="loader" class="text-blue-500 hidden animate-spin">🌀</span>
+    <div class="flex gap-4">
+        <button onclick="switchView('list')" id="btn-list" class="text-blue-600 font-bold">行程</button>
+        <button onclick="switchView('stats')" id="btn-stats" class="text-slate-400 font-bold">花費</button>
+    </div>
 </nav>
 
-<main class="p-4 flex gap-4 overflow-x-auto" id="board">
-    </main>
+<div id="day-nav" class="bg-white flex gap-6 px-4 py-3 overflow-x-auto border-b sticky top-[64px] z-50 no-scrollbar">
+    <button onclick="setDay(1)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-1">D1 3/19</button>
+    <button onclick="setDay(2)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-2">D2 3/20</button>
+    <button onclick="setDay(3)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-3">D3 3/21</button>
+    <button onclick="setDay(4)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-4">D4 3/22</button>
+    <button onclick="setDay(5)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-5">D5 3/23</button>
+    <button onclick="setDay(6)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-6">D6 3/24</button>
+</div>
 
-<div id="modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-        <h3 class="font-bold mb-4 text-slate-800">新增行程卡片</h3>
-        <div class="space-y-3">
-            <input type="text" id="in-title" placeholder="活動名稱 (例: 鄭王廟)" class="w-full bg-slate-100 p-3 rounded-xl outline-none">
+<main id="view-list" class="p-4 space-y-4 pb-24 transition-all" id="main-content">
+    <div id="card-container" class="space-y-4"></div>
+</main>
+
+<main id="view-stats" class="p-4 hidden space-y-6">
+    <div class="bg-white rounded-3xl p-6 shadow-sm">
+        <h3 class="text-slate-400 text-xs font-bold mb-4 uppercase tracking-widest">總花費概覽 (THB)</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-blue-50 p-4 rounded-2xl">
+                <p class="text-[10px] text-blue-400 font-bold">博懷 出資</p>
+                <p id="total-bohuai" class="text-xl font-black text-blue-600">฿0</p>
+            </div>
+            <div class="bg-indigo-50 p-4 rounded-2xl">
+                <p class="text-[10px] text-indigo-400 font-bold">阿正 出資</p>
+                <p id="total-azheng" class="text-xl font-black text-indigo-600">฿0</p>
+            </div>
+        </div>
+    </div>
+    <div id="category-stats" class="bg-white rounded-3xl p-6 shadow-sm space-y-3">
+        </div>
+</main>
+
+<div id="modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-end sm:items-center justify-center backdrop-blur-sm">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+        <h3 id="modal-title" class="font-bold mb-4 text-slate-800">編輯行程</h3>
+        <div class="space-y-4 text-sm">
+            <input type="text" id="m-title" placeholder="活動名稱" class="w-full bg-slate-100 p-4 rounded-2xl outline-none">
             <div class="flex gap-2">
-                <input type="text" id="in-time" placeholder="時間 (例: 15:00)" class="w-1/2 bg-slate-100 p-3 rounded-xl">
-                <select id="in-day" class="w-1/2 bg-slate-100 p-3 rounded-xl">
-                    <option value="1">Day 1 (3/19)</option><option value="2">Day 2 (3/20)</option>
-                    <option value="3">Day 3 (3/21)</option><option value="4">Day 4 (3/22)</option>
-                    <option value="5">Day 5 (3/23)</option><option value="6">Day 6 (3/24)</option>
+                <input type="text" id="m-time" placeholder="時間 (如 09:25)" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
+                <select id="m-category" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
+                    <option value="交通">交通</option><option value="餐點">餐點</option>
+                    <option value="景點">景點</option><option value="其他">其他</option>
                 </select>
             </div>
-            <select id="in-type" class="w-full bg-slate-100 p-3 rounded-xl">
-                <option value="spot">景點</option><option value="food">美食</option>
-                <option value="hotel">飯店</option><option value="flight">航班</option>
-                <option value="transport">交通</option>
-            </select>
-            <input type="text" id="in-url" placeholder="Google Maps 或 網頁連結" class="w-full bg-slate-100 p-3 rounded-xl">
-            <textarea id="in-note" placeholder="備註 (如: 訂單編號)" class="w-full bg-slate-100 p-3 rounded-xl"></textarea>
+            <div class="flex gap-2">
+                <input type="number" id="m-cost" placeholder="花費金額 (THB)" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
+                <select id="m-payer" class="w-1/2 bg-slate-100 p-4 rounded-2xl font-bold text-blue-600">
+                    <option value="博懷">博懷 先出錢</option>
+                    <option value="阿正">阿正 先出錢</option>
+                    <option value="無">不計入費用</option>
+                </select>
+            </div>
+            <input type="text" id="m-url" placeholder="Google Maps 網址" class="w-full bg-slate-100 p-4 rounded-2xl">
+            <textarea id="m-note" placeholder="備註/訂單編號" class="w-full bg-slate-100 p-4 rounded-2xl h-24"></textarea>
         </div>
         <div class="flex gap-2 mt-6">
-            <button onclick="closeModal()" class="flex-1 py-3 text-slate-400 font-bold">取消</button>
-            <button onclick="addData()" class="flex-1 bg-blue-600 text-white py-3 rounded-2xl font-bold">同步到 Sheet</button>
+            <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold">取消</button>
+            <button onclick="saveData()" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold">儲存同步</button>
         </div>
+        <button id="btn-delete" onclick="deleteData()" class="w-full mt-4 text-red-400 text-xs py-2">刪除此項目</button>
     </div>
 </div>
 
-<button onclick="openModal()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl text-3xl font-light z-50 flex items-center justify-center">+</button>
+<button onclick="openAddModal()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl text-3xl font-light z-50 flex items-center justify-center">+</button>
 
 <script>
-    // 已串接你的專屬 GAS URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyTRAUKi7Uo8Mn0ih_q9qx4LBHM_6nwGIb6MLK1n1z46p4WcP9sMpLeuGS3utgMNQ19ZA/exec";
+    let allData = [];
+    let currentDay = 1;
+    let currentEditId = null;
+    let baseFontSize = 14;
 
-    async function loadData() {
-        showLoader(true);
-        try {
-            const res = await fetch(GAS_URL);
-            const data = await res.json();
-            render(data);
-            document.getElementById('sync-status').innerText = "連線正常";
-            document.getElementById('sync-status').className = "text-green-500";
-        } catch (e) {
-            document.getElementById('sync-status').innerText = "連線失敗";
-            document.getElementById('sync-status').className = "text-red-500";
-        }
-        showLoader(false);
+    function changeFontSize(n) {
+        baseFontSize += n;
+        document.body.style.fontSize = baseFontSize + 'px';
+        localStorage.setItem('tripFontSize', baseFontSize);
     }
 
-    function render(data) {
-        const board = document.getElementById('board');
-        board.innerHTML = '';
-        const dayLabels = ["3/19 (四)", "3/20 (五)", "3/21 (六)", "3/22 (日)", "3/23 (一)", "3/24 (二)"];
-        
-        dayLabels.forEach((label, i) => {
-            const dayNum = i + 1;
-            const col = document.createElement('div');
-            col.className = "day-col flex-shrink-0 w-80";
-            col.innerHTML = `<h2 class="font-black text-slate-400 mb-4 px-2 italic text-sm tracking-widest">${label}</h2><div id="day-${dayNum}" class="space-y-4"></div>`;
-            board.appendChild(col);
+    async function fetchData() {
+        const res = await fetch(GAS_URL);
+        allData = await res.json();
+        render();
+        calcStats();
+    }
 
-            data.filter(d => d.Day == dayNum).forEach(item => {
-                const card = document.createElement('div');
-                card.className = `bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-${item.Type || 'spot'} transition-transform active:scale-95`;
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-bold text-slate-300 tracking-tighter">${item.Time}</span>
-                        <div class="flex gap-3">
-                            ${item.URL ? `<button onclick="window.open('${item.URL}')" class="text-blue-500 text-[10px] font-black uppercase">Link</button>` : ''}
-                            <button onclick="deleteData('${item.ID}')" class="text-slate-200 text-[10px]">✕</button>
-                        </div>
+    function setDay(d) {
+        currentDay = d;
+        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('tab-active'));
+        document.getElementById(`tab-${d}`).classList.add('tab-active');
+        render();
+    }
+
+    function render() {
+        const container = document.getElementById('card-container');
+        container.innerHTML = '';
+        const filtered = allData.filter(d => d.Day == currentDay);
+
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            card.className = `bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-spot transition-transform active:scale-[0.98] relative`;
+            card.dataset.id = item.ID;
+            card.onclick = () => openEditModal(item);
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-[10px] font-bold text-slate-300">${item.Time}</span>
+                    <div class="flex gap-3">
+                        ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-blue-500 text-[10px] font-black italic">MAP</button>` : ''}
+                        <span class="text-slate-200 text-xs">☰</span>
                     </div>
-                    <h4 class="font-bold text-slate-800 text-sm leading-snug">${item.Title}</h4>
-                    ${item.Note ? `<p class="text-[10px] text-slate-400 mt-3 leading-relaxed bg-slate-50 p-2 rounded-lg">${item.Note}</p>` : ''}
-                `;
-                document.getElementById(`day-${dayNum}`).appendChild(card);
-            });
+                </div>
+                <h4 class="font-bold text-slate-800">${item.Title}</h4>
+                <div class="flex justify-between items-center mt-3">
+                    <span class="text-[10px] px-2 py-1 bg-slate-50 text-slate-400 rounded-full">${item.Category || '其他'}</span>
+                    ${item.Cost ? `<span class="text-xs font-black text-slate-700">฿${item.Cost} <span class="text-[8px] text-blue-400">(${item.Payer})</span></span>` : ''}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        // 啟動上下拖拽排序
+        new Sortable(container, {
+            animation: 150,
+            ghostClass: 'card-ghost',
+            handle: '.bg-white'
         });
     }
 
-    async function addData() {
+    function calcStats() {
+        let bohuai = 0, azheng = 0;
+        const cats = {};
+        allData.forEach(d => {
+            const c = parseFloat(d.Cost) || 0;
+            if (d.Payer === '博懷') bohuai += c;
+            if (d.Payer === '阿正') azheng += c;
+            if (c > 0) {
+                cats[d.Category] = (cats[d.Category] || 0) + c;
+            }
+        });
+        document.getElementById('total-bohuai').innerText = `฿${bohuai.toLocaleString()}`;
+        document.getElementById('total-azheng').innerText = `฿${azheng.toLocaleString()}`;
+        
+        const catBox = document.getElementById('category-stats');
+        catBox.innerHTML = '<h4 class="text-[10px] font-bold text-slate-400 mb-2">分類支出統計</h4>';
+        Object.entries(cats).forEach(([cat, val]) => {
+            catBox.innerHTML += `
+                <div class="flex justify-between items-center border-b border-slate-50 pb-2">
+                    <span class="text-sm text-slate-600">${cat}</span>
+                    <span class="text-sm font-bold">฿${val.toLocaleString()}</span>
+                </div>
+            `;
+        });
+    }
+
+    function switchView(v) {
+        document.getElementById('view-list').classList.toggle('hidden', v !== 'list');
+        document.getElementById('view-stats').classList.toggle('hidden', v !== 'stats');
+        document.getElementById('day-nav').classList.toggle('hidden', v !== 'list');
+        document.getElementById('btn-list').className = v === 'list' ? 'text-blue-600 font-bold' : 'text-slate-400 font-bold';
+        document.getElementById('btn-stats').className = v === 'stats' ? 'text-blue-600 font-bold' : 'text-slate-400 font-bold';
+    }
+
+    function openAddModal() {
+        currentEditId = null;
+        document.getElementById('modal-title').innerText = "新增行程項目";
+        document.getElementById('m-title').value = '';
+        document.getElementById('btn-delete').classList.add('hidden');
+        document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function openEditModal(item) {
+        currentEditId = item.ID;
+        document.getElementById('modal-title').innerText = "修改內容";
+        document.getElementById('m-title').value = item.Title;
+        document.getElementById('m-time').value = item.Time;
+        document.getElementById('m-cost').value = item.Cost;
+        document.getElementById('m-payer').value = item.Payer || '無';
+        document.getElementById('m-category').value = item.Category || '其他';
+        document.getElementById('m-url').value = item.URL;
+        document.getElementById('m-note').value = item.Note;
+        document.getElementById('btn-delete').classList.remove('hidden');
+        document.getElementById('modal').classList.remove('hidden');
+    }
+
+    async function saveData() {
         const payload = {
-            action: "add",
-            day: document.getElementById('in-day').value,
-            time: document.getElementById('in-time').value,
-            title: document.getElementById('in-title').value,
-            url: document.getElementById('in-url').value,
-            note: document.getElementById('in-note').value,
-            type: document.getElementById('in-type').value
+            action: currentEditId ? "update" : "add",
+            id: currentEditId || Date.now(),
+            day: currentDay,
+            time: document.getElementById('m-time').value,
+            title: document.getElementById('m-title').value,
+            cost: document.getElementById('m-cost').value,
+            payer: document.getElementById('m-payer').value,
+            category: document.getElementById('m-category').value,
+            url: document.getElementById('m-url').value,
+            note: document.getElementById('m-note').value,
+            type: "spot"
         };
-        showLoader(true);
         await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         closeModal();
-        loadData();
+        fetchData();
     }
 
-    async function deleteData(id) {
-        if(!confirm('確定要從 Google Sheet 移除此項？')) return;
-        showLoader(true);
-        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: id }) });
-        loadData();
+    async function deleteData() {
+        if(!confirm('刪除這筆行程與花費？')) return;
+        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) });
+        closeModal();
+        fetchData();
     }
 
-    function showLoader(show) { document.getElementById('loader').classList.toggle('hidden', !show); }
-    function openModal() { document.getElementById('modal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
-    window.onload = loadData;
+    window.onload = () => {
+        const savedSize = localStorage.getItem('tripFontSize');
+        if(savedSize) changeFontSize(parseInt(savedSize) - baseFontSize);
+        setDay(1);
+        fetchData();
+    };
 </script>
 </body>
 </html>
