@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泰國之旅 2026 - 智能行程助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        .drag-ghost { opacity: 0.5; background: #ebf8ff; border: 2px dashed #4299e1; }
+        .card-flight { border-left: 8px solid #fbbf24; }
+        .card-hotel { border-left: 8px solid #60a5fa; }
+        .card-spot { border-left: 8px solid #34d399; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<nav class="bg-white shadow-md p-4 sticky top-0 z-50 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-blue-600">🇹🇭 2026 泰國行儀表板</h1>
+    <div class="flex gap-2">
+        <button id="auth_button" class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600">登入 Google Drive</button>
+        <button onclick="saveData()" class="bg-green-500 text-white px-4 py-2 rounded text-sm">儲存設定</button>
+    </div>
+</nav>
+
+<main class="p-4 overflow-x-auto">
+    <div id="realtime-status" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+            <h2 class="font-bold text-yellow-800 flex items-center gap-2">✈️ 即時航班動態</h2>
+            <div id="flight-info" class="text-sm mt-2 text-yellow-900">
+                正在抓取 JX741 (3/19) 與 JX742 (3/24) 資訊...
+            </div>
+        </div>
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+            <h2 class="font-bold text-blue-800 flex items-center gap-2">🚄 3/24 返台接駁</h2>
+            <div id="transport-info" class="text-sm mt-2 text-blue-900">
+                載入中：機捷 A13 $\rightarrow$ A18 / 高鐵 20:30+ 班次
+            </div>
+        </div>
+    </div>
+
+    <div id="kanban-board" class="flex gap-6 pb-10">
+        </div>
+</main>
+
+<div id="card-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[100]">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+        <h3 class="text-lg font-bold mb-4" id="modal-title">編輯項目</h3>
+        <div class="space-y-4">
+            <input type="text" id="edit-title" placeholder="景點/活動名稱" class="w-full border p-2 rounded">
+            <div class="flex gap-2">
+                <input type="time" id="edit-time" class="border p-2 rounded w-1/2">
+                <input type="number" id="edit-cost" placeholder="花費 (THB)" class="border p-2 rounded w-1/2">
+            </div>
+            <input type="text" id="edit-location" placeholder="Google 地圖搜尋關鍵字" class="w-full border p-2 rounded">
+            <div class="p-4 border-2 border-dashed rounded-lg bg-gray-50 text-center">
+                <p class="text-xs text-gray-500 mb-2">自動命名：yyyyMMdd_HHmm_地點</p>
+                <input type="file" id="photo-upload" class="hidden">
+                <button onclick="document.getElementById('photo-upload').click()" class="bg-blue-100 text-blue-600 px-4 py-2 rounded text-sm font-bold">上傳照片到 Google Drive</button>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-6">
+            <button onclick="closeModal()" class="px-4 py-2 text-gray-500">取消</button>
+            <button onclick="saveCardChanges()" class="bg-blue-600 text-white px-6 py-2 rounded">更新</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 配置區域 (請填寫你的 Google API) ---
+    const CLIENT_ID = '你的CLIENT_ID';
+    const API_KEY = '你的API_KEY';
+    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
+    const SCOPES = "https://www.googleapis.com/auth/drive.file";
+
+    let gapiInited = false;
+    let gisInited = false;
+    let tokenClient;
+
+    // --- 預設行程資料 ---
+    let tripData = [
+        { day: "3/19 (週四)", date: "20260319", items: [
+            { time: "05:25", title: "搭統聯 (台中->機場)", type: "transport", location: "桃園機場" },
+            { time: "09:25", title: "星宇 JX741 起飛", type: "flight", location: "桃園機場第二航廈" },
+            { time: "16:00", title: "入住 Holiday Inn Express", type: "hotel", location: "Holiday Inn Express Pattaya Central", note: "編號: 1660580945" },
+            { time: "18:27", title: "中天海灘 Jomtien Beach 日落", type: "spot", location: "Jomtien Beach" }
+        ]},
+        { day: "3/20 (週五)", date: "20260320", items: [
+            { time: "09:00", title: "早餐 The Lunar Beach House", type: "spot", location: "The Lunar Beach House Pattaya" },
+            { time: "17:30", title: "夕陽 Banlay Home Cafe", type: "spot", location: "Banlay Home Cafe" },
+            { time: "20:00", title: "飛機夜市/Walking St", type: "spot", location: "Runway 88 Night Market" }
+        ]},
+        { day: "3/21 (週六)", date: "20260321", items: [
+            { time: "12:00", title: "退房 / 包車回曼谷", type: "transport", location: "Sindhorn Midtown Hotel Bangkok" },
+            { time: "15:00", title: "入住 Sindhorn Midtown", type: "hotel", location: "Sindhorn Midtown Hotel Bangkok", note: "編號: 1668994448" },
+            { time: "19:00", title: "高空觀景台 / 夜市選一", type: "spot", location: "Akara Sky Hanuman" }
+        ]},
+        { day: "3/22 (週日)", date: "20260322", items: [
+            { time: "10:00", title: "老城區/臥佛寺/鄭王廟", type: "spot", location: "Wat Pho" },
+            { time: "18:00", title: "ICONSIAM", type: "spot", location: "ICONSIAM" }
+        ]},
+        { day: "3/23 (週一)", date: "20260323", items: [
+            { time: "12:00", title: "Pe Aor 龍蝦麵", type: "spot", location: "Pe Aor Tom Yum Kung" },
+            { time: "19:00", title: "朱拉隆功夜市 (海鹽麵包)", type: "spot", location: "Bake a wish Chulalongkorn" }
+        ]},
+        { day: "3/24 (週二)", date: "20260324", items: [
+            { time: "11:00", title: "退房回機場", type: "transport", location: "BKK Airport" },
+            { time: "13:45", title: "星宇 JX742 返台", type: "flight", location: "BKK Airport" },
+            { time: "21:10", title: "高鐵返回台中", type: "transport", location: "高鐵桃園站" }
+        ]}
+    ];
+
+    // --- 渲染功能 ---
+    function renderBoard() {
+        const board = document.getElementById('kanban-board');
+        board.innerHTML = '';
+        tripData.forEach((dayData, dayIndex) => {
+            const col = document.createElement('div');
+            col.className = "flex-shrink-0 w-80 bg-gray-200 rounded-xl p-3";
+            col.innerHTML = `<h3 class="font-bold mb-4 flex justify-between"><span>${dayData.day}</span> <span class="text-xs text-gray-500">${dayData.date}</span></h3><div class="card-list space-y-3 min-h-[500px]" data-day="${dayIndex}"></div>`;
+            
+            const list = col.querySelector('.card-list');
+            dayData.items.forEach((item, itemIndex) => {
+                const card = document.createElement('div');
+                card.className = `bg-white p-4 rounded-lg shadow-sm cursor-pointer card-${item.type} hover:shadow-md transition-shadow`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-gray-400">${item.time}</span>
+                        <div class="flex gap-2">
+                            <button onclick="openMap('${item.location}')" class="text-blue-500">📍</button>
+                        </div>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mt-1">${item.title}</h4>
+                    ${item.note ? `<p class="text-[10px] text-blue-400 mt-1">${item.note}</p>` : ''}
+                    <div class="flex justify-between mt-3 text-[10px] text-gray-400">
+                        <span>${item.cost ? '฿' + item.cost : ''}</span>
+                        <span onclick="editCard(${dayIndex}, ${itemIndex})">✏️ 編輯</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            board.appendChild(col);
+
+            new Sortable(list, {
+                group: 'shared',
+                animation: 150,
+                ghostClass: 'drag-ghost',
+                onEnd: (evt) => {
+                    // 這裡可以加入更新 tripData 順序的邏輯
+                }
+            });
+        });
+    }
+
+    // --- 地圖與即時資料 ---
+    function openMap(loc) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`);
+    }
+
+    function fetchRealtime() {
+        // 模擬航班與交通抓取 (針對 3/24)
+        document.getElementById('flight-info').innerHTML = `
+            <b>JX742 (3/24)</b>: 預計 18:25 抵達 T2 <br>
+            報到櫃檯: M / 登機口: S108 / 行李轉盤: 載入中...
+        `;
+        document.getElementById('transport-info').innerHTML = `
+            <b>機捷 A13 $\rightarrow$ A18</b>: 每 15 分鐘一班 (車程 17min) <br>
+            <b>高鐵 桃園站</b>: 20:34 (車次 853) / 20:43 (車次 681)
+        `;
+    }
+
+    // --- Modal 邏輯 ---
+    let currentEdit = null;
+    function editCard(dayIdx, itemIdx) {
+        currentEdit = { dayIdx, itemIdx };
+        const item = tripData[dayIdx].items[itemIdx];
+        document.getElementById('modal-title').innerText = `${tripData[dayIdx].day} - ${item.title}`;
+        document.getElementById('edit-title').value = item.title;
+        document.getElementById('edit-time').value = item.time;
+        document.getElementById('edit-cost').value = item.cost || '';
+        document.getElementById('edit-location').value = item.location;
+        document.getElementById('card-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('card-modal').classList.add('hidden');
+    }
+
+    // --- Google Drive 自動命名上傳邏輯 ---
+    document.getElementById('photo-upload').onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file || !currentEdit) return;
+
+        const dayData = tripData[currentEdit.dayIdx];
+        const item = dayData.items[currentEdit.itemIdx];
+        
+        // 自動命名規範: yyyyMMdd_HHmm_地點.jpg
+        const cleanTime = item.time.replace(':', '');
+        const newName = `${dayData.date}_${cleanTime}_${item.location}.${file.name.split('.').pop()}`;
+        
+        alert(`準備上傳並更名為: ${newName}`);
+        // 此處呼叫 gapi.client.drive.files.create 並設定 metadata: { name: newName }
+    };
+
+    // 初始化
+    window.onload = () => {
+        renderBoard();
+        fetchRealtime();
+    };
+</script>
+</body>
+</html>
