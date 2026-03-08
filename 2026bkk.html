@@ -2,107 +2,125 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🇹🇭 泰國行 2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>THAI 2026 DASHBOARD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { font-family: sans-serif; -webkit-user-select: none; }
-        .tab-active { color: #2563eb; border-bottom: 3px solid #2563eb; font-weight: 900; }
-        .card-ghost { opacity: 0.3; background: #dbeafe; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-day { color: #000; font-weight: 800; border-bottom: 2px solid #000; }
+        .bottom-drawer { transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+        .tag { font-size: 9px; padding: 2px 8px; border-radius: 4px; font-weight: 800; letter-spacing: 0.05em; }
+        .bg-flight { background: #fee2e2; color: #ef4444; }
+        .bg-hotel { background: #dcfce7; color: #22c55e; }
+        .bg-food { background: #fef9c3; color: #ca8a04; }
+        .bg-spot { background: #e0f2fe; color: #0ea5e9; }
+        .bg-transport { background: #f3f4f6; color: #6b7280; }
     </style>
 </head>
-<body class="bg-slate-100 overflow-x-hidden">
+<body class="bg-white text-black selection:bg-black selection:text-white">
 
-<nav class="bg-white p-4 sticky top-0 z-[60] shadow-sm flex justify-between items-center border-b">
-    <div class="flex items-center gap-3">
-        <h1 class="font-black text-slate-800 text-lg">2026 THAI</h1>
-        <div class="flex border rounded-lg overflow-hidden text-[10px]">
-            <button onclick="changeFontSize(-2)" class="px-2 py-1 bg-gray-50 border-r text-slate-400">A-</button>
-            <button onclick="changeFontSize(2)" class="px-2 py-1 bg-gray-50 text-slate-400">A+</button>
+<nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md z-[100] border-b border-gray-100">
+    <div class="px-6 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-extrabold tracking-tighter">THAI.26</h1>
+        <div class="flex bg-gray-100 rounded-full p-1 scale-90">
+            <button onclick="switchView('list')" id="btn-list" class="px-6 py-1.5 rounded-full text-xs font-bold transition-all bg-black text-white shadow-lg">PLAN</button>
+            <button onclick="switchView('stats')" id="btn-stats" class="px-6 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400">BILL</button>
         </div>
     </div>
-    <div class="flex gap-4">
-        <button onclick="switchView('list')" id="btn-list" class="text-blue-600 font-bold">行程</button>
-        <button onclick="switchView('stats')" id="btn-stats" class="text-slate-400 font-bold">花費</button>
+    
+    <div id="day-nav" class="flex gap-8 px-6 pb-2 overflow-x-auto no-scrollbar border-t border-gray-50 pt-3">
+        <button onclick="setDay(1)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-1">MAR 19</button>
+        <button onclick="setDay(2)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-2">MAR 20</button>
+        <button onclick="setDay(3)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-3">MAR 21</button>
+        <button onclick="setDay(4)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-4">MAR 22</button>
+        <button onclick="setDay(5)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-5">MAR 23</button>
+        <button onclick="setDay(6)" class="day-tab flex-shrink-0 text-sm text-gray-300 pb-2" id="tab-6">MAR 24</button>
     </div>
 </nav>
 
-<div id="day-nav" class="bg-white flex gap-6 px-4 py-3 overflow-x-auto border-b sticky top-[64px] z-50 no-scrollbar">
-    <button onclick="setDay(1)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-1">D1 3/19</button>
-    <button onclick="setDay(2)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-2">D2 3/20</button>
-    <button onclick="setDay(3)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-3">D3 3/21</button>
-    <button onclick="setDay(4)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-4">D4 3/22</button>
-    <button onclick="setDay(5)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-5">D5 3/23</button>
-    <button onclick="setDay(6)" class="day-tab flex-shrink-0 text-sm py-1" id="tab-6">D6 3/24</button>
-</div>
-
-<main id="view-list" class="p-4 space-y-4 pb-24 transition-all" id="main-content">
-    <div id="card-container" class="space-y-4"></div>
-</main>
-
-<main id="view-stats" class="p-4 hidden space-y-6">
-    <div class="bg-white rounded-3xl p-6 shadow-sm">
-        <h3 class="text-slate-400 text-xs font-bold mb-4 uppercase tracking-widest">總花費概覽 (THB)</h3>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-blue-50 p-4 rounded-2xl">
-                <p class="text-[10px] text-blue-400 font-bold">博懷 出資</p>
-                <p id="total-bohuai" class="text-xl font-black text-blue-600">฿0</p>
-            </div>
-            <div class="bg-indigo-50 p-4 rounded-2xl">
-                <p class="text-[10px] text-indigo-400 font-bold">阿正 出資</p>
-                <p id="total-azheng" class="text-xl font-black text-indigo-600">฿0</p>
-            </div>
-        </div>
-    </div>
-    <div id="category-stats" class="bg-white rounded-3xl p-6 shadow-sm space-y-3">
+<main id="view-list" class="pt-32 p-6 space-y-8 pb-32">
+    <div id="card-container" class="space-y-6">
         </div>
 </main>
 
-<div id="modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-end sm:items-center justify-center backdrop-blur-sm">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-        <h3 id="modal-title" class="font-bold mb-4 text-slate-800">編輯行程</h3>
-        <div class="space-y-4 text-sm">
-            <input type="text" id="m-title" placeholder="活動名稱" class="w-full bg-slate-100 p-4 rounded-2xl outline-none">
-            <div class="flex gap-2">
-                <input type="text" id="m-time" placeholder="時間 (如 09:25)" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
-                <select id="m-category" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
-                    <option value="交通">交通</option><option value="餐點">餐點</option>
-                    <option value="景點">景點</option><option value="其他">其他</option>
-                </select>
+<main id="view-stats" class="pt-24 p-6 hidden space-y-8 pb-32">
+    <div class="bg-black rounded-3xl p-8 text-white">
+        <p class="text-[10px] font-bold text-gray-500 tracking-widest mb-2 uppercase">Current Spending</p>
+        <h2 id="grand-total" class="text-5xl font-extrabold mb-10 tracking-tighter">฿0</h2>
+        <div class="space-y-6 border-t border-gray-800 pt-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold mb-1">博懷 (Bohuai)</p>
+                    <p id="total-bohuai" class="text-2xl font-bold italic">฿0</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-500 font-bold mb-1">阿正 (Azheng)</p>
+                    <p id="total-azheng" class="text-2xl font-bold italic">฿0</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <input type="number" id="m-cost" placeholder="花費金額 (THB)" class="w-1/2 bg-slate-100 p-4 rounded-2xl">
-                <select id="m-payer" class="w-1/2 bg-slate-100 p-4 rounded-2xl font-bold text-blue-600">
-                    <option value="博懷">博懷 先出錢</option>
-                    <option value="阿正">阿正 先出錢</option>
-                    <option value="無">不計入費用</option>
-                </select>
-            </div>
-            <input type="text" id="m-url" placeholder="Google Maps 網址" class="w-full bg-slate-100 p-4 rounded-2xl">
-            <textarea id="m-note" placeholder="備註/訂單編號" class="w-full bg-slate-100 p-4 rounded-2xl h-24"></textarea>
         </div>
-        <div class="flex gap-2 mt-6">
-            <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold">取消</button>
-            <button onclick="saveData()" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold">儲存同步</button>
+    </div>
+    <div id="category-stats" class="space-y-4"></div>
+</main>
+
+<div id="modal-overlay" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden z-[200]" onclick="closeModal()"></div>
+<div id="modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-[3rem] z-[210] bottom-drawer translate-y-full p-8 pb-16 shadow-2xl overflow-y-auto max-h-[85vh]">
+    <div class="w-16 h-1 bg-gray-100 rounded-full mx-auto mb-8"></div>
+    <div class="flex justify-between items-center mb-8">
+        <h3 id="modal-title" class="text-2xl font-extrabold">EDIT</h3>
+        <button onclick="deleteData()" id="btn-delete" class="text-red-500 font-bold text-xs">REMOVE</button>
+    </div>
+    
+    <div class="space-y-6">
+        <input type="text" id="m-title" placeholder="What's next?" class="w-full text-xl font-bold border-b border-gray-100 py-3 outline-none focus:border-black transition-colors">
+        
+        <div class="grid grid-cols-2 gap-6">
+            <input type="text" id="m-time" placeholder="00:00" class="bg-gray-50 p-4 rounded-2xl text-center font-bold">
+            <select id="m-type" class="bg-gray-50 p-4 rounded-2xl font-bold appearance-none text-center">
+                <option value="spot">PLAY</option><option value="food">EAT</option>
+                <option value="transport">MOVE</option><option value="hotel">STAY</option><option value="flight">FLY</option>
+            </select>
         </div>
-        <button id="btn-delete" onclick="deleteData()" class="w-full mt-4 text-red-400 text-xs py-2">刪除此項目</button>
+
+        <div class="grid grid-cols-2 gap-6">
+            <input type="number" id="m-cost" placeholder="THB" class="bg-gray-50 p-4 rounded-2xl text-center font-bold">
+            <select id="m-payer" class="bg-black text-white p-4 rounded-2xl font-bold appearance-none text-center">
+                <option value="博懷">博懷</option><option value="阿正">阿正</option><option value="無">NONE</option>
+            </select>
+        </div>
+
+        <input type="text" id="m-url" placeholder="Paste Map Link" class="w-full text-xs text-blue-500 border-b border-gray-100 py-2 outline-none">
+        <textarea id="m-note" placeholder="Any details..." class="w-full bg-gray-50 p-4 rounded-2xl h-24 text-sm outline-none"></textarea>
+        
+        <button onclick="saveData()" class="w-full bg-black text-white py-5 rounded-2xl font-bold tracking-widest active:scale-95 transition-all">SYNC TO SHEET</button>
     </div>
 </div>
 
-<button onclick="openAddModal()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl text-3xl font-light z-50 flex items-center justify-center">+</button>
+<button onclick="openAddModal()" class="fixed bottom-10 right-8 bg-black text-white w-14 h-14 rounded-full shadow-2xl z-50 flex items-center justify-center active:scale-90 transition-all">
+    <span class="text-2xl">+</span>
+</button>
+
+<div class="fixed bottom-4 left-6 flex gap-4 z-50 opacity-10">
+    <button onclick="changeFontSize(-1)" class="text-xs">A-</button>
+    <button onclick="changeFontSize(1)" class="text-xs">A+</button>
+</div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyTRAUKi7Uo8Mn0ih_q9qx4LBHM_6nwGIb6MLK1n1z46p4WcP9sMpLeuGS3utgMNQ19ZA/exec";
     let allData = [];
     let currentDay = 1;
     let currentEditId = null;
-    let baseFontSize = 14;
 
-    function changeFontSize(n) {
-        baseFontSize += n;
-        document.body.style.fontSize = baseFontSize + 'px';
-        localStorage.setItem('tripFontSize', baseFontSize);
+    // 時間格式修正邏輯
+    function formatTime(t) {
+        if (!t) return "00:00";
+        const str = String(t);
+        if (str.includes('T')) return str.split('T')[1].substring(0, 5);
+        if (str.length > 8) return str.substring(0, 5);
+        return str;
     }
 
     async function fetchData() {
@@ -114,8 +132,8 @@
 
     function setDay(d) {
         currentDay = d;
-        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('tab-active'));
-        document.getElementById(`tab-${d}`).classList.add('tab-active');
+        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active-day'));
+        document.getElementById(`tab-${d}`).classList.add('active-day');
         render();
     }
 
@@ -126,88 +144,96 @@
 
         filtered.forEach(item => {
             const card = document.createElement('div');
-            card.className = `bg-white p-5 rounded-3xl shadow-sm border border-slate-100 card-spot transition-transform active:scale-[0.98] relative`;
-            card.dataset.id = item.ID;
+            card.className = "group active:scale-[0.98] transition-transform";
             card.onclick = () => openEditModal(item);
+            
+            const cleanTime = formatTime(item.Time);
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-[10px] font-bold text-slate-300">${item.Time}</span>
-                    <div class="flex gap-3">
-                        ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-blue-500 text-[10px] font-black italic">MAP</button>` : ''}
-                        <span class="text-slate-200 text-xs">☰</span>
+                <div class="flex gap-6">
+                    <div class="w-12 pt-1 text-center">
+                        <p class="text-[10px] font-black tracking-tighter uppercase mb-1">at</p>
+                        <p class="text-xs font-bold">${cleanTime}</p>
                     </div>
-                </div>
-                <h4 class="font-bold text-slate-800">${item.Title}</h4>
-                <div class="flex justify-between items-center mt-3">
-                    <span class="text-[10px] px-2 py-1 bg-slate-50 text-slate-400 rounded-full">${item.Category || '其他'}</span>
-                    ${item.Cost ? `<span class="text-xs font-black text-slate-700">฿${item.Cost} <span class="text-[8px] text-blue-400">(${item.Payer})</span></span>` : ''}
+                    <div class="flex-1 border-l border-gray-100 pl-6 pb-8 relative">
+                        <div class="absolute -left-[4.5px] top-2 w-2 h-2 rounded-full bg-black"></div>
+                        <div class="mb-2">
+                            <span class="tag bg-${item.Type || 'spot'}">${item.Type || 'spot'}</span>
+                        </div>
+                        <h4 class="text-lg font-extrabold tracking-tight">${item.Title}</h4>
+                        ${item.Note ? `<p class="text-xs text-gray-400 mt-2 font-medium italic">${item.Note}</p>` : ''}
+                        <div class="mt-4 flex justify-between items-center">
+                            ${item.Cost ? `<span class="text-xs font-bold">฿${parseInt(item.Cost).toLocaleString()} <span class="text-[8px] text-gray-300">/ ${item.Payer}</span></span>` : '<span></span>'}
+                            ${item.URL ? `<button onclick="event.stopPropagation(); window.open('${item.URL}')" class="text-[10px] font-black underline underline-offset-4">GO MAP</button>` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
             container.appendChild(card);
         });
-
-        // 啟動上下拖拽排序
-        new Sortable(container, {
-            animation: 150,
-            ghostClass: 'card-ghost',
-            handle: '.bg-white'
-        });
+        new Sortable(container, { animation: 150 });
     }
 
     function calcStats() {
-        let bohuai = 0, azheng = 0;
+        let b = 0, a = 0, total = 0;
         const cats = {};
         allData.forEach(d => {
             const c = parseFloat(d.Cost) || 0;
-            if (d.Payer === '博懷') bohuai += c;
-            if (d.Payer === '阿正') azheng += c;
+            total += c;
+            if (d.Payer === '博懷') b += c;
+            if (d.Payer === '阿正') a += c;
             if (c > 0) {
-                cats[d.Category] = (cats[d.Category] || 0) + c;
+                const type = d.Type || 'spot';
+                cats[type] = (cats[type] || 0) + c;
             }
         });
-        document.getElementById('total-bohuai').innerText = `฿${bohuai.toLocaleString()}`;
-        document.getElementById('total-azheng').innerText = `฿${azheng.toLocaleString()}`;
+        document.getElementById('grand-total').innerText = `฿${total.toLocaleString()}`;
+        document.getElementById('total-bohuai').innerText = `฿${b.toLocaleString()}`;
+        document.getElementById('total-azheng').innerText = `฿${a.toLocaleString()}`;
         
         const catBox = document.getElementById('category-stats');
-        catBox.innerHTML = '<h4 class="text-[10px] font-bold text-slate-400 mb-2">分類支出統計</h4>';
+        catBox.innerHTML = '';
         Object.entries(cats).forEach(([cat, val]) => {
+            const percent = Math.round((val / total) * 100);
             catBox.innerHTML += `
-                <div class="flex justify-between items-center border-b border-slate-50 pb-2">
-                    <span class="text-sm text-slate-600">${cat}</span>
-                    <span class="text-sm font-bold">฿${val.toLocaleString()}</span>
+                <div class="flex justify-between items-end pb-4 border-b border-gray-50">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${cat}</p>
+                        <p class="text-sm font-bold">฿${val.toLocaleString()}</p>
+                    </div>
+                    <p class="text-[10px] font-black">${percent}%</p>
                 </div>
             `;
         });
     }
 
-    function switchView(v) {
-        document.getElementById('view-list').classList.toggle('hidden', v !== 'list');
-        document.getElementById('view-stats').classList.toggle('hidden', v !== 'stats');
-        document.getElementById('day-nav').classList.toggle('hidden', v !== 'list');
-        document.getElementById('btn-list').className = v === 'list' ? 'text-blue-600 font-bold' : 'text-slate-400 font-bold';
-        document.getElementById('btn-stats').className = v === 'stats' ? 'text-blue-600 font-bold' : 'text-slate-400 font-bold';
+    function openEditModal(item) {
+        currentEditId = item.ID;
+        document.getElementById('m-title').value = item.Title;
+        document.getElementById('m-time').value = formatTime(item.Time);
+        document.getElementById('m-type').value = item.Type || 'spot';
+        document.getElementById('m-cost').value = item.Cost;
+        document.getElementById('m-payer').value = item.Payer || '博懷';
+        document.getElementById('m-url').value = item.URL;
+        document.getElementById('m-note').value = item.Note;
+        document.getElementById('btn-delete').style.display = 'block';
+        showModal();
     }
 
     function openAddModal() {
         currentEditId = null;
-        document.getElementById('modal-title').innerText = "新增行程項目";
-        document.getElementById('m-title').value = '';
-        document.getElementById('btn-delete').classList.add('hidden');
-        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('m-title').value = "";
+        document.getElementById('btn-delete').style.display = 'none';
+        showModal();
     }
 
-    function openEditModal(item) {
-        currentEditId = item.ID;
-        document.getElementById('modal-title').innerText = "修改內容";
-        document.getElementById('m-title').value = item.Title;
-        document.getElementById('m-time').value = item.Time;
-        document.getElementById('m-cost').value = item.Cost;
-        document.getElementById('m-payer').value = item.Payer || '無';
-        document.getElementById('m-category').value = item.Category || '其他';
-        document.getElementById('m-url').value = item.URL;
-        document.getElementById('m-note').value = item.Note;
-        document.getElementById('btn-delete').classList.remove('hidden');
-        document.getElementById('modal').classList.remove('hidden');
+    function showModal() {
+        document.getElementById('modal-overlay').classList.remove('hidden');
+        document.getElementById('modal').classList.remove('translate-y-full');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('modal').classList.add('translate-y-full');
     }
 
     async function saveData() {
@@ -217,30 +243,40 @@
             day: currentDay,
             time: document.getElementById('m-time').value,
             title: document.getElementById('m-title').value,
+            type: document.getElementById('m-type').value,
             cost: document.getElementById('m-cost').value,
             payer: document.getElementById('m-payer').value,
-            category: document.getElementById('m-category').value,
             url: document.getElementById('m-url').value,
-            note: document.getElementById('m-note').value,
-            type: "spot"
+            note: document.getElementById('m-note').value
         };
-        await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         closeModal();
+        await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
         fetchData();
     }
 
     async function deleteData() {
-        if(!confirm('刪除這筆行程與花費？')) return;
-        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) });
+        if(!confirm('REMOVE FROM SHEET?')) return;
         closeModal();
+        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "delete", id: currentEditId }) });
         fetchData();
     }
 
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+    function switchView(v) {
+        const isList = v === 'list';
+        document.getElementById('view-list').classList.toggle('hidden', !isList);
+        document.getElementById('view-stats').classList.toggle('hidden', isList);
+        document.getElementById('day-nav').classList.toggle('hidden', !isList);
+        document.getElementById('btn-list').className = isList ? 'px-6 py-1.5 rounded-full text-xs font-bold transition-all bg-black text-white shadow-lg' : 'px-6 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400';
+        document.getElementById('btn-stats').className = !isList ? 'px-6 py-1.5 rounded-full text-xs font-bold transition-all bg-black text-white shadow-lg' : 'px-6 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400';
+    }
+
+    function changeFontSize(delta) {
+        const root = document.documentElement;
+        const current = parseFloat(getComputedStyle(root).fontSize);
+        root.style.fontSize = (current + delta) + 'px';
+    }
 
     window.onload = () => {
-        const savedSize = localStorage.getItem('tripFontSize');
-        if(savedSize) changeFontSize(parseInt(savedSize) - baseFontSize);
         setDay(1);
         fetchData();
     };
