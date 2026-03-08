@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國旅遊助手 - 曼谷 & 芭達雅</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>泰國隨身助手 - 曼谷芭達雅</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -11,47 +11,48 @@
         body { font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .tab-active { color: #2563eb; border-bottom: 2px solid #2563eb; }
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .card-enter { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-24">
 
-    <header class="bg-blue-600 text-white p-6 shadow-lg rounded-b-[2rem]">
+    <header class="bg-blue-600 text-white p-6 shadow-lg rounded-b-[2.5rem]">
         <div class="flex justify-between items-start">
             <div>
-                <h1 class="text-2xl font-bold italic tracking-wider">THAI TRIP 2026</h1>
-                <p class="text-blue-100 text-sm opacity-80">個人專屬雲端行程助手</p>
+                <h1 class="text-2xl font-bold italic tracking-tighter">THAI TRIP 2026</h1>
+                <p class="text-blue-100 text-xs opacity-90 mt-1">Bangkok & Pattaya Assistant</p>
             </div>
-            <div id="user-status" class="text-[10px] bg-blue-700 px-2 py-1 rounded">連線中...</div>
+            <div id="user-status" class="text-[10px] bg-blue-700/50 backdrop-blur-md px-2 py-1 rounded-full border border-blue-400/30">連線中...</div>
         </div>
     </header>
 
-    <nav class="flex bg-white mx-4 -mt-4 rounded-xl shadow-md sticky top-4 z-50">
+    <nav class="flex bg-white mx-4 -mt-5 rounded-2xl shadow-xl sticky top-4 z-50 border border-slate-100">
         <button onclick="switchTab('itinerary')" id="tab-itinerary" class="flex-1 py-4 text-sm font-bold tab-active">行程計畫</button>
         <button onclick="switchTab('expenses')" id="tab-expenses" class="flex-1 py-4 text-sm font-bold text-slate-400">隨手記帳</button>
         <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-4 text-sm font-bold text-slate-400">管理</button>
     </nav>
 
-    <main class="p-4 mt-4">
-        <section id="section-itinerary" class="animate-pop">
+    <main class="p-4 mt-2">
+        
+        <section id="section-itinerary">
             <div class="flex gap-2 overflow-x-auto no-scrollbar pb-4" id="day-selector"></div>
             <div id="itinerary-list" class="space-y-3"></div>
         </section>
 
-        <section id="section-expenses" class="hidden animate-pop">
-            <div class="bg-white p-6 rounded-2xl shadow-sm mb-6 text-center border border-blue-100">
-                <p class="text-slate-400 text-xs">目前累計支出</p>
-                <div class="text-4xl font-black text-slate-800 my-1">
-                    <span class="text-blue-600 text-xl mr-1">฿</span><span id="total-amount">0</span>
+        <section id="section-expenses" class="hidden">
+            <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-3xl shadow-lg mb-6 text-center text-white">
+                <p class="text-blue-100 text-xs mb-1">本次旅行累計支出</p>
+                <div class="text-4xl font-black italic">
+                    <span class="text-xl mr-1">฿</span><span id="total-amount">0</span>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm mb-6 border border-slate-100">
                 <div class="flex gap-2">
-                    <input id="exp-name" type="text" placeholder="項目" class="flex-1 bg-slate-50 p-3 rounded-lg text-sm outline-none focus:ring-1 ring-blue-400">
-                    <input id="exp-price" type="number" placeholder="金額" class="w-24 bg-slate-50 p-3 rounded-lg text-sm outline-none focus:ring-1 ring-blue-400">
-                    <button onclick="addExpense()" class="bg-blue-600 text-white px-4 rounded-lg active:scale-95 transition-transform">
+                    <input id="exp-name" type="text" placeholder="項目 (如: 泰奶)" class="flex-1 bg-slate-50 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-500/20">
+                    <input id="exp-price" type="number" placeholder="金額" class="w-24 bg-slate-50 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-blue-500/20">
+                    <button onclick="addExpense()" class="bg-blue-600 text-white px-4 rounded-xl active:scale-95 transition-transform">
                         <i data-lucide="plus"></i>
                     </button>
                 </div>
@@ -59,22 +60,22 @@
             <div id="expense-list" class="space-y-2"></div>
         </section>
 
-        <section id="section-settings" class="hidden animate-pop">
-            <div class="bg-white p-6 rounded-2xl space-y-4 shadow-sm">
-                <h3 class="font-bold border-b pb-2">管理功能</h3>
-                <button onclick="exportJSON()" class="w-full text-left p-4 bg-slate-50 rounded-xl text-sm flex items-center justify-between">
-                    <span>導出備份資料 (JSON)</span>
-                    <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+        <section id="section-settings" class="hidden">
+            <div class="bg-white p-6 rounded-3xl space-y-4 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 border-b pb-3">系統設置</h3>
+                <button onclick="exportJSON()" class="w-full text-left p-4 bg-slate-50 rounded-2xl text-sm flex items-center justify-between group">
+                    <span class="text-slate-600">導出 JSON 備份</span>
+                    <i data-lucide="download" class="w-4 h-4 text-slate-400 group-active:translate-y-1 transition-transform"></i>
                 </button>
-                <button onclick="resetToDefault()" class="w-full text-left p-4 bg-red-50 text-red-600 rounded-xl text-sm flex items-center justify-between">
-                    <span>重置為原始行程</span>
+                <button onclick="resetToDefault()" class="w-full text-left p-4 bg-red-50 text-red-600 rounded-2xl text-sm flex items-center justify-between">
+                    <span>重置為預設行程 (慎用)</span>
                     <i data-lucide="refresh-cw" class="w-4 h-4 opacity-50"></i>
                 </button>
             </div>
         </section>
     </main>
 
-    <div id="map-fab" class="fixed bottom-6 right-6 z-50">
+    <div class="fixed bottom-6 right-6 z-50">
         <button onclick="openGoogleMaps('Thailand')" class="bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform">
             <i data-lucide="map"></i>
         </button>
@@ -85,83 +86,94 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase 配置 (請替換為你的實際配置)
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
             projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
             messagingSenderId: "YOUR_SENDER_ID",
             appId: "YOUR_APP_ID"
         };
 
-        // 檢查是否有預注入的環境變數，否則使用上面的 config
         const finalConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        
         const app = initializeApp(finalConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 初始化全域狀態
         window.appData = { itinerary: [], expenses: [], userId: null };
         let currentDay = 1;
 
+        // 預設行程資料 (依照您的要求完整填寫)
         const defaultItinerary = [
             { day: 1, date: "3/19 (週四)", items: [
-                { time: "05:25", title: "搭統聯到機場", loc: "台中統聯", icon: "bus" },
+                { time: "05:25", title: "台中出發", loc: "台中統聯轉運站", icon: "bus" },
+                { time: "07:25", title: "抵達桃機", loc: "桃園機場T2", icon: "map-pin" },
                 { time: "09:25", title: "星宇 JX741 起飛", loc: "桃園機場T2", icon: "plane" },
-                { time: "16:00", title: "入住 Holiday Inn Express", loc: "Holiday Inn Express Pattaya Central", icon: "hotel", note: "預約編號: 1660580945" },
-                { time: "18:27", title: "中天海灘日落", loc: "Jomtien Beach", icon: "sun" }
+                { time: "12:35", title: "抵達曼谷 BKK", loc: "Suvarnabhumi Airport", icon: "info" },
+                { time: "14:00", title: "機場巴士前往芭達雅", loc: "Suvarnabhumi Airport", icon: "bus" },
+                { time: "16:00", title: "入住飯店 (Holiday Inn)", loc: "Holiday Inn Express Pattaya Central", icon: "hotel", note: "訂單: 1660580945" },
+                { time: "18:27", title: "中天海灘日落", loc: "Jomtien Beach", icon: "sun" },
+                { time: "20:00", title: "中天夜市 & 酒吧", loc: "Jomtien Night Market", icon: "beer" }
             ]},
             { day: 2, date: "3/20 (週五)", items: [
-                { time: "09:00", title: "The Lunar Beach House", loc: "The Lunar Beach House", icon: "coffee" },
-                { time: "19:00", title: "芭達雅步行街", loc: "Walking Street Pattaya", icon: "beer" }
+                { time: "09:00", title: "早餐 The Lunar Beach", loc: "The Lunar Beach House", icon: "coffee" },
+                { time: "14:00", title: "飛機夜市巡禮", loc: "Terminal 21 Pattaya", icon: "shopping-bag" },
+                { time: "17:30", title: "夕陽 Banlay Home Cafe", loc: "Banlay Home Cafe", icon: "camera" },
+                { time: "20:00", title: "芭達雅步行街 酒吧", loc: "Walking Street Pattaya", icon: "beer" }
             ]},
             { day: 3, date: "3/21 (週六)", items: [
-                { time: "11:00", title: "包車前往曼谷", loc: "Sindhorn Midtown Hotel", icon: "car" },
-                { time: "14:00", title: "入住 Sindhorn Midtown", loc: "Sindhorn Midtown Hotel Bangkok", icon: "hotel", note: "預約編號: 1668994448" }
+                { time: "10:00", title: "退房與移動", loc: "Holiday Inn Express Pattaya Central", icon: "log-out" },
+                { time: "11:00", title: "私家包車前往曼谷", loc: "Sindhorn Midtown Hotel Bangkok", icon: "car" },
+                { time: "14:00", title: "入住 Sindhorn Midtown", loc: "Sindhorn Midtown Hotel Bangkok", icon: "hotel", note: "訂單: 1668994448" },
+                { time: "17:00", title: "Akara Sky Hanuman 觀景", loc: "Akara Sky Hanuman", icon: "eye" },
+                { time: "20:00", title: "夜市(Save One/希娜克琳)", loc: "Srinakarin Train Night Market", icon: "map" }
             ]},
             { day: 4, date: "3/22 (週日)", items: [
-                { time: "10:00", title: "鄭王廟泰服體驗", loc: "Wat Arun", icon: "camera" },
-                { time: "17:00", title: "ICONSIAM", loc: "ICONSIAM", icon: "shopping-bag" }
+                { time: "09:30", title: "臥佛寺 參拜", loc: "Wat Pho", icon: "landmark" },
+                { time: "11:30", title: "鄭王廟 拍泰服", loc: "Wat Arun", icon: "camera" },
+                { time: "15:00", title: "松瓦路 老城區漫步", loc: "Song Wat Road", icon: "map-pin" },
+                { time: "18:00", title: "ICONSIAM 逛街", loc: "ICONSIAM", icon: "shopping-cart" }
             ]},
             { day: 5, date: "3/23 (週一)", items: [
-                { time: "12:00", title: "龍蝦麵 綠洲", loc: "Oasis Luxury Noodles", icon: "utensils" },
-                { time: "19:00", title: "朱拉隆功夜市", loc: "Chulalongkorn Night Market", icon: "map" }
+                { time: "10:00", title: "飯店無邊際泳池", loc: "Sindhorn Midtown Hotel Bangkok", icon: "waves" },
+                { time: "12:30", title: "綠洲 龍蝦麵", loc: "Oasis Luxury Noodles", icon: "utensils" },
+                { time: "15:00", title: "Central Park 漫遊", loc: "Central Park Bangkok", icon: "palmtree" },
+                { time: "18:30", title: "朱拉隆功夜市 & 海鹽麵包", loc: "Chulalongkorn University Night Market", icon: "utensils-crossed", note: "Bake a Wish" }
             ]},
             { day: 6, date: "3/24 (週二)", items: [
-                { time: "13:45", title: "星宇 JX742 返台", loc: "Suvarnabhumi Airport", icon: "plane" }
+                { time: "11:00", title: "飯店退房", loc: "Sindhorn Midtown Hotel Bangkok", icon: "log-out" },
+                { time: "11:30", title: "接送前往機場", loc: "Suvarnabhumi Airport", icon: "car" },
+                { time: "12:30", title: "JCB 貴賓室休息", loc: "Suvarnabhumi Airport Miracle Lounge", icon: "armchair" },
+                { time: "13:45", title: "星宇 JX742 起飛", loc: "Suvarnabhumi Airport", icon: "plane" },
+                { time: "18:25", title: "抵達桃機", loc: "桃園機場", icon: "check-circle" },
+                { time: "21:10", title: "高鐵回台中", loc: "桃園高鐵站", icon: "train" }
             ]}
         ];
 
-        // 初始化
         async function init() {
             try {
                 await signInAnonymously(auth);
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         window.appData.userId = user.uid;
-                        document.getElementById('user-status').innerText = `ID: ${user.uid.substring(0,6)}`;
+                        document.getElementById('user-status').innerText = `已連線 ID: ${user.uid.substring(0,5)}`;
                         syncData(user.uid);
                     }
                 });
-            } catch (error) {
-                console.error("Auth Error:", error);
-                document.getElementById('user-status').innerText = "離線模式";
+            } catch (err) {
+                console.error("Auth Fail", err);
                 window.appData.itinerary = defaultItinerary;
                 renderAll();
             }
         }
 
         function syncData(uid) {
-            // 使用 UID 作為路徑，確保使用者資料隔離
-            const docRef = doc(db, 'user_trips', uid);
-            
-            onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    window.appData.itinerary = data.itinerary || defaultItinerary;
-                    window.appData.expenses = data.expenses || [];
+            const docRef = doc(db, 'trips', uid);
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    window.appData.itinerary = snap.data().itinerary || defaultItinerary;
+                    window.appData.expenses = snap.data().expenses || [];
                 } else {
                     window.appData.itinerary = defaultItinerary;
                     setDoc(docRef, { itinerary: defaultItinerary, expenses: [] });
@@ -172,14 +184,13 @@
 
         window.saveToCloud = async () => {
             if (!window.appData.userId) return;
-            const docRef = doc(db, 'user_trips', window.appData.userId);
+            const docRef = doc(db, 'trips', window.appData.userId);
             await updateDoc(docRef, {
                 itinerary: window.appData.itinerary,
                 expenses: window.appData.expenses
             });
         };
 
-        // UI 渲染與互動
         window.switchTab = (tab) => {
             ['itinerary', 'expenses', 'settings'].forEach(t => {
                 document.getElementById(`section-${t}`).classList.add('hidden');
@@ -201,16 +212,13 @@
         function renderDaySelector() {
             const container = document.getElementById('day-selector');
             container.innerHTML = window.appData.itinerary.map(day => `
-                <button onclick="setDay(${day.day})" class="px-5 py-2 rounded-full whitespace-nowrap text-sm font-bold border transition-all ${currentDay === day.day ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-500 border-slate-200'}">
+                <button onclick="setDay(${day.day})" class="px-5 py-2 rounded-2xl whitespace-nowrap text-sm font-bold border transition-all ${currentDay === day.day ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-105' : 'bg-white text-slate-500 border-slate-100 shadow-sm'}">
                     Day ${day.day}
                 </button>
             `).join('');
         }
 
-        window.setDay = (day) => {
-            currentDay = day;
-            renderAll();
-        };
+        window.setDay = (d) => { currentDay = d; renderAll(); };
 
         function renderItinerary() {
             const dayData = window.appData.itinerary.find(d => d.day === currentDay);
@@ -218,23 +226,28 @@
             if (!dayData) return;
 
             container.innerHTML = dayData.items.map((item, idx) => `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center gap-4">
-                    <div class="min-w-[55px] text-center border-r pr-3">
-                        <p class="text-xs font-bold text-blue-600">${item.time}</p>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-50 flex items-center gap-4 card-enter">
+                    <div class="min-w-[55px] text-center border-r pr-3 cursor-pointer" onclick="editItem(${idx})">
+                        <p class="text-[11px] font-black text-blue-600">${item.time}</p>
                     </div>
-                    <div class="flex-1">
-                        <h4 class="text-sm font-bold text-slate-800">${item.title}</h4>
-                        <p class="text-[10px] text-slate-400 flex items-center gap-1">
-                            <i data-lucide="map-pin" class="w-3 h-3"></i> ${item.loc}
+                    <div class="flex-1 cursor-pointer" onclick="editItem(${idx})">
+                        <h4 class="text-[13px] font-bold text-slate-800">${item.title}</h4>
+                        <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <i data-lucide="${item.icon || 'map-pin'}" class="w-3 h-3"></i> ${item.loc}
                         </p>
-                        ${item.note ? `<p class="mt-1"><span class="text-[9px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded italic"># ${item.note}</span></p>` : ''}
+                        ${item.note ? `<span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full mt-1 inline-block border border-blue-100">${item.note}</span>` : ''}
                     </div>
-                    <button onclick="openGoogleMaps('${item.loc}')" class="p-3 bg-blue-50 text-blue-600 rounded-full active:bg-blue-100">
-                        <i data-lucide="navigation" class="w-4 h-4"></i>
-                    </button>
+                    <div class="flex gap-1">
+                        <button onclick="openGoogleMaps('${item.loc}')" class="p-2.5 bg-slate-50 text-blue-600 rounded-full active:bg-blue-100">
+                            <i data-lucide="navigation" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteItem(${idx})" class="p-2.5 text-slate-200 hover:text-red-400">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('') + `
-                <button onclick="addItem()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm flex items-center justify-center gap-2">
+                <button onclick="addItem()" class="w-full p-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
                     <i data-lucide="plus-circle" class="w-4 h-4"></i> 新增項目
                 </button>
             `;
@@ -242,83 +255,79 @@
 
         function renderExpenses() {
             const list = document.getElementById('expense-list');
-            const total = window.appData.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            const total = window.appData.expenses.reduce((s, e) => s + Number(e.amount), 0);
             document.getElementById('total-amount').innerText = total.toLocaleString();
 
             list.innerHTML = window.appData.expenses.map((exp, idx) => `
-                <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center card-enter border border-slate-50">
                     <div>
-                        <p class="text-sm font-medium text-slate-700">${exp.name}</p>
-                        <p class="text-[10px] text-slate-400">${exp.time}</p>
+                        <p class="text-sm font-bold text-slate-700">${exp.name}</p>
+                        <p class="text-[10px] text-slate-400 font-mono">${exp.time}</p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <span class="font-bold text-slate-800 font-mono text-lg">฿${exp.amount}</span>
-                        <button onclick="removeExpense(${idx})" class="text-slate-300 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <span class="font-black text-slate-800 italic">฿${exp.amount}</span>
+                        <button onclick="removeExpense(${idx})" class="text-slate-200"><i data-lucide="x" class="w-4 h-4"></i></button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 功能函數
-        window.openGoogleMaps = (loc) => {
-            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
-            window.open(url, '_blank');
-        };
+        // Logic Functions
+        window.openGoogleMaps = (l) => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l)}`, '_blank');
 
         window.addExpense = () => {
             const name = document.getElementById('exp-name').value;
             const amount = document.getElementById('exp-price').value;
             if (!name || !amount) return;
-            
-            window.appData.expenses.unshift({
-                name,
-                amount: Number(amount),
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})
-            });
+            window.appData.expenses.unshift({ name, amount: Number(amount), time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false})});
             document.getElementById('exp-name').value = '';
             document.getElementById('exp-price').value = '';
-            renderExpenses();
-            window.saveToCloud();
+            renderExpenses(); saveToCloud();
         };
 
-        window.removeExpense = (idx) => {
-            if(confirm("確定刪除此筆記錄？")) {
-                window.appData.expenses.splice(idx, 1);
-                renderExpenses();
-                window.saveToCloud();
-                lucide.createIcons();
-            }
-        };
+        window.removeExpense = (i) => { window.appData.expenses.splice(i, 1); renderExpenses(); saveToCloud(); };
 
         window.addItem = () => {
-            const title = prompt("項目名稱?");
-            const time = prompt("時間? (HH:MM)");
-            const loc = prompt("詳細地點/地標?");
-            if (title && time && loc) {
-                const dayIdx = window.appData.itinerary.findIndex(d => d.day === currentDay);
-                window.appData.itinerary[dayIdx].items.push({title, time, loc, icon: 'map-pin'});
-                window.appData.itinerary[dayIdx].items.sort((a,b) => a.time.localeCompare(b.time));
-                renderItinerary();
-                window.saveToCloud();
-                lucide.createIcons();
+            const title = prompt("項目?");
+            const time = prompt("時間 (HH:MM)?");
+            const loc = prompt("地點?");
+            if(title && time && loc) {
+                const dIdx = window.appData.itinerary.findIndex(d => d.day === currentDay);
+                window.appData.itinerary[dIdx].items.push({title, time, loc, icon: 'map-pin'});
+                window.appData.itinerary[dIdx].items.sort((a,b)=>a.time.localeCompare(b.time));
+                renderItinerary(); saveToCloud(); lucide.createIcons();
             }
         };
 
-        window.resetToDefault = () => {
-            if(confirm("注意：這將會清除雲端所有改動並重置。")) {
-                window.appData.itinerary = JSON.parse(JSON.stringify(defaultItinerary));
-                window.appData.expenses = [];
-                renderAll();
-                window.saveToCloud();
+        window.editItem = (idx) => {
+            const dIdx = window.appData.itinerary.findIndex(d => d.day === currentDay);
+            const item = window.appData.itinerary[dIdx].items[idx];
+            const t = prompt("名稱?", item.title);
+            const h = prompt("時間?", item.time);
+            const l = prompt("地點?", item.loc);
+            if(t && h && l) {
+                window.appData.itinerary[dIdx].items[idx] = {...item, title:t, time:h, loc:l};
+                window.appData.itinerary[dIdx].items.sort((a,b)=>a.time.localeCompare(b.time));
+                renderItinerary(); saveToCloud();
             }
         };
+
+        window.deleteItem = (idx) => {
+            if(confirm("確定刪除此行程？")) {
+                const dIdx = window.appData.itinerary.findIndex(d => d.day === currentDay);
+                window.appData.itinerary[dIdx].items.splice(idx, 1);
+                renderItinerary(); saveToCloud(); lucide.createIcons();
+            }
+        };
+
+        window.resetToDefault = () => { if(confirm("確定重置？")) { window.appData.itinerary = JSON.parse(JSON.stringify(defaultItinerary)); renderAll(); saveToCloud(); }};
 
         window.exportJSON = () => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.appData, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `thai_trip_backup_${new Date().toISOString().slice(0,10)}.json`);
-            dlAnchor.click();
+            const blob = new Blob([JSON.stringify(window.appData, null, 2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `trip_backup_${new Date().toLocaleDateString()}.json`;
+            a.click();
         };
 
         window.onload = init;
